@@ -56,3 +56,7 @@ models/*
 # Generated figures (retain directory marker)
 reports/figures/*
 !reports/figures/.gitkeep
+
+# NASA C-MAPSS raw dataset
+data/raw/cmapss/*
+!data/raw/cmapss/.gitkeep
