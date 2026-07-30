@@ -93,8 +93,8 @@ deactivate
 ## Roadmap
 
 - [x] Milestone 1: Create the project scaffold and development foundation
-- [ ] Milestone 2: Acquire and document the C-MAPSS dataset
-- [ ] Milestone 3: Load, validate, and explore the data
+- [x] Milestone 2: Acquire and document the C-MAPSS dataset
+- [x] Milestone 3: Load, validate, and explore the data
 - [ ] Milestone 4: Build leakage-safe RUL targets and features
 - [ ] Milestone 5: Train baseline and candidate regression models
 - [ ] Milestone 6: Evaluate, interpret, and compare models
