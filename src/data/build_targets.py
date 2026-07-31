@@ -2,8 +2,7 @@
 
 import pandas as pd
 
-
-RUL_COLUMN = "remaining_useful_life"
+from src.data.load_data import RUL_COLUMN
 
 
 def add_training_rul(data: pd.DataFrame) -> pd.DataFrame:
