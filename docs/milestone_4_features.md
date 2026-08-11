@@ -26,7 +26,9 @@ The following columns are excluded from model inputs:
 - unit number
 - remaining_useful_life
 
-The current cycle, operational setting, and raw sensor values remain available as model inputs
+The current cycle, 
+operational setting including 1,2,3, 
+and raw sensor values remain available as model inputs
 
 For every sensor, the workflow creates:
 - Rolling mean over the current and previous four cycles
@@ -42,6 +44,26 @@ The first cycle std and difference are set to 0 because no earlier observations 
 The preprocessing pipeline contains:
 - VarianceThreshold: to remove columns that are constant in the training data
 - StandardScaler to center and scale retained features
+
+## FD001 verification
+- The complete workflow was run on the local FD001 training data
+
+
+- Check                         Result
+- Raw rows                      20,163
+- Raw columns                   26
+- Training rows                 16,561
+- Validation rows               4.070
+- Retained features             63
+- Training missing values       0
+- Validation missing            0
+- Training values finite        Yes
+- Validation values finite      No
+- Training indexes aligned      Yes
+- Validation indexes aligned    Yes
+- Training RUL range            0-361
+- Validation RUL range          0-268
+
 
 
 The preprocessor has:
