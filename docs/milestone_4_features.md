@@ -11,7 +11,12 @@ The current scope uses the NASA C-MAPSS FD001 subset
 ## RUL targets
 Training trajectories continue until simulated failure
 For each training row: 
-RUL= endpoint RUL + last observed cycle - current cycle
+RUL = final engine cycle - current cycle
+
+# NASA
+- Supplies 1 endpoint RUL value for each test engine.
+- For each test row we have
+- RUL = endpoint RUL + last observed cycle - current cycle
 
 ## Engine-level splitting
 
