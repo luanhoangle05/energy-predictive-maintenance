@@ -50,7 +50,7 @@ The preprocessing pipeline contains:
 
 
 - Check                         Result
-- Raw rows                      20,163
+- Raw rows                      20,631
 - Raw columns                   26
 - Training rows                 16,561
 - Validation rows               4.070
@@ -58,11 +58,20 @@ The preprocessing pipeline contains:
 - Training missing values       0
 - Validation missing            0
 - Training values finite        Yes
-- Validation values finite      No
+- Validation values finite      Yes
 - Training indexes aligned      Yes
 - Validation indexes aligned    Yes
 - Training RUL range            0-361
 - Validation RUL range          0-268
+
+## Leakage protection
+Workflow prevents leakage by:
+- Keeping engine together during splitting
+- Excluding engine IDs from model inputs
+- Calculating rolling features independently per engine
+- Using current and previous cycles in time-series features
+- Fitting variance and scaling on training, validation data
+- Reusing the preprocessing for testing data
 
 
 
