@@ -94,4 +94,6 @@ The preprocessor has:
 - .fit_transform(): used for training engines to calculate std+ mean then learn the pattern
 - .transform(): used the same calculation and apply
 
+# COMPLETE MILESTONE 4 DOCUMENTATION
+
 
