@@ -95,7 +95,9 @@ deactivate
 - [x] Milestone 1: Create the project scaffold and development foundation
 - [x] Milestone 2: Acquire and document the C-MAPSS dataset
 - [x] Milestone 3: Load, validate, and explore the data
-- [ ] Milestone 4: Build leakage-safe RUL targets and features
+- [x] Milestone 4: Build leakage-safe RUL targets and features
+- Milestone 4 feature definitions and FD001 verification are documented in
+[docs/milestone_4_features.md](docs/milestone_4_features.md).
 - [ ] Milestone 5: Train baseline and candidate regression models
 - [ ] Milestone 6: Evaluate, interpret, and compare models
 - [ ] Milestone 7: Package the prediction workflow and presentation app
