@@ -38,3 +38,14 @@ Rolling windows and differences restart when a new engine begins
 
 The first cycle std and difference are set to 0 because no earlier observations are available
 
+## Train-fitted preprocessing
+The preprocessing pipeline contains:
+- VarianceThreshold: to remove columns that are constant in the training data
+- StandardScaler to center and scale retained features
+
+
+The preprocessor has:
+- .fit_transform(): used for training engines to calculate std+ mean then learn the pattern
+- .transform(): used the same calculation and apply
+
+
