@@ -66,12 +66,17 @@ The preprocessing pipeline contains:
 
 ## Leakage protection
 Workflow prevents leakage by:
-- Keeping engine together during splitting
-- Excluding engine IDs from model inputs
+- Keeping engine trajectories together during splitting
+- Excluding engine IDs and RUL targets from model inputs
 - Calculating rolling features independently per engine
 - Using current and previous cycles in time-series features
-- Fitting variance and scaling on training, validation data
-- Reusing the preprocessing for testing data
+- Fitting variance and scaling on training data ONLY
+- Reusing the preprocessor for validation data
+
+# Testing 
+The project test suite contains 18 passing tests covering target
+construction, endpoint RUL loading, engine-level splitting,
+feature construction, preprocessing, and end-to-end preparation.
 
 
 
