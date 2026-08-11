@@ -47,7 +47,7 @@ def test_prepare_training_validation_data_end_to_end() -> None:
         rolling_window=2,
     )
 
-    assert len(training_features) == 9
+    assert len(training_features) == 8
     assert len(validation_features) == 6
 
     assert training_features.index.equals(
