@@ -8,6 +8,11 @@ validation data without information leakage.
 
 The current scope uses the NASA C-MAPSS FD001 subset
 
+## RUL targets
+Training trajectories continue until simulated failure
+For each training row: 
+RUL= endpoint RUL + last observed cycle - current cycle
+
 ## Engine-level splitting
 
 Training and validation data are split by engine ID rather than individual rows
@@ -16,7 +21,7 @@ This ensures that all cycles belonging to one engine remain in the same dataset
 No engine appears in both training and validation data
 
 The default split uses:
-- Validation size: 20%
+- Validation size: 20% of engine IDs
 - Random state = 42
 - Shuffling: enabled at the engine-ID level
 
@@ -53,7 +58,7 @@ The preprocessing pipeline contains:
 - Raw rows                      20,631
 - Raw columns                   26
 - Training rows                 16,561
-- Validation rows               4.070
+- Validation rows               4,070
 - Retained features             63
 - Training missing values       0
 - Validation missing            0
