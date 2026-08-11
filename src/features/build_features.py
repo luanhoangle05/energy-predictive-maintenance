@@ -106,6 +106,52 @@ def add_rolling_sensor_standard_deviations(
     return  result
 
 
+# This function helps the model understand the sensor's direction and speed of change
+
+# Engine A readings: 40 -> 45 -> 50
+# Engine B readings: 60 -> 55 -> 50
+
+# Both have sensor value of 50 but
+# Engine A difference = +5
+# Engine B difference = -5
+
+def add_sensor_difference(data: pd.DataFrame) -> pd.DataFrame:
+    """Add cycle-to-cycle sensor changes independently per engine."""
+    result = data.copy()
+
+    sensor_columns = [
+        column
+        for column in result.columns
+        if (
+            column.startswith("sensor_")
+            and "_rolling_" not in column
+            and not column.endswith("_difference")
+        )
+    ]
+
+    for sensor_column in sensor_columns:
+        feature_name = f"{sensor_column}_difference"
+
+# We have to do group by unit_number
+# So that we can avoid: Engine 2 cycle 1 - Engine 1 final cycle
+
+# .diff(): calculate current row - previous row within each engine
+
+# fillna(0.0): the first cycle of every engine has no previous cycle
+# The code replace the undefined first difference with 0
+# meaning no previous observed change is available
+
+        result[feature_name] = result.groupby(
+            "unit_number",
+            sort=False
+        )[sensor_column].diff().fillna(0.0)
+
+    return result
+
+
+
+
+
 
 def build_features(data: pd.DataFrame, rolling_window: int = 5) -> pd.DataFrame:
     """Return model inputs without engine identifiers or RUL targets."""
@@ -119,6 +165,8 @@ def build_features(data: pd.DataFrame, rolling_window: int = 5) -> pd.DataFrame:
         featured_data,
         window_size=rolling_window,
     )
+
+    featured_data = add_sensor_difference(featured_data)
 
     columns_to_remove = []
 
