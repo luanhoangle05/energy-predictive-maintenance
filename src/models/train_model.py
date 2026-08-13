@@ -4,7 +4,16 @@ from typing import Any
 
 import pandas as pd
 
+from sklearn.dummy import DummyRegressor
 
-def train_model(features: pd.DataFrame, target: pd.Series) -> Any:
+def train_model(
+        features: pd.DataFrame,
+        target: pd.Series
+) -> Any
     """Train a regression model in a future milestone."""
-    raise NotImplementedError("Model training is not implemented in Milestone 1.")
+
+    model = DummyRegressor(strategy="mean")
+    model.fit(features,target)
+
+    return model
+
