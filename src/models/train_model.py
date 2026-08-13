@@ -9,7 +9,7 @@ from sklearn.dummy import DummyRegressor
 def train_model(
         features: pd.DataFrame,
         target: pd.Series
-) -> Any
+) -> Any:
     """Train a regression model in a future milestone."""
 
     model = DummyRegressor(strategy="mean")
