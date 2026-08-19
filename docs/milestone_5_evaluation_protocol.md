@@ -28,3 +28,18 @@ They will be used only for final endpoint evaluation after model and feature dec
 
 The first model comparison uses predictions from every cycle belonging to the held-out validation engines
 
+### Mean Absolute Error
+
+MAE measures the absolute difference between predicted and actual RUL
+
+It is expressed in operating cycles and is easy to interpret
+
+Lower values indicate better predictions
+
+### Root Mean Squared Error
+
+RMSE calculates the square root of the average squared prediction error
+
+
+
+Lower values indicate better predictions
