@@ -52,7 +52,7 @@ Higher values indicate better performance
 
 An R² value can be negative when a model performs worse than the reference mean prediction
 
-## Initial evaluation
+## Initial evaluation limitation
 
 Metrics calculated across every validation row give more influence to engines with longer trajectories because they contribute more cycles.
 
