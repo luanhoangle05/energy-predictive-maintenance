@@ -10,7 +10,16 @@ def train_model(
         features: pd.DataFrame,
         target: pd.Series
 ) -> Any:
-    """Train a regression model in a future milestone."""
+    """Train a Dummy Regressor model in a future milestone."""
+
+    # Dummy Regressor acts as a baseline model
+    # Why? The baseline asks:
+    # Can my actual ML model do better than just predicting the average RUL for everything
+
+    # Example:
+    # Mean baseline RMSE = 35 cycles
+    # Random Forest RMSE = 23 cycles
+    # => Random Forest provides meaningful predictive value
 
     model = DummyRegressor(strategy="mean")
     model.fit(features,target)
