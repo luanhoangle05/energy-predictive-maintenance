@@ -30,7 +30,7 @@ The first model comparison uses predictions from every cycle belonging to the he
 
 ### Mean Absolute Error
 
-MAE measures the absolute difference between predicted and actual RUL
+MAE measures the average absolute difference between predicted and actual RUL
 
 It is expressed in operating cycles and is easy to interpret
 
@@ -40,6 +40,20 @@ Lower values indicate better predictions
 
 RMSE calculates the square root of the average squared prediction error
 
-
+It penalizes large prediction errors more strongly than MAE
 
 Lower values indicate better predictions
+
+### R-squared
+
+R² measures model performance relative to predicting a constant mean value
+
+Higher values indicate better performance
+
+An R² value can be negative when a model performs worse than the reference mean prediction
+
+## Initial evaluation
+
+Metrics calculated across every validation row give more influence to engines with longer trajectories because they contribute more cycles.
+
+Engine-level diagnostics and near-failure analysis will be added later to ensure that overall row-level metrics do not hide poor performance on particular engines or important RUL ranges.
