@@ -1,53 +1,157 @@
 # Industrial Equipment Predictive Maintenance
 
-An end-to-end data science project for predicting the remaining useful life (RUL) of rotating machinery from multivariate sensor data.
+An end-to-end machine-learning project for estimating the remaining useful life
+(RUL) of rotating machinery from multivariate time-series sensor data.
+
+The current development scope uses the FD001 subset of NASA's C-MAPSS dataset.
+The project begins with reproducible RUL prediction and will later extend into
+uncertainty estimation, risk assessment, maintenance-policy simulation,
+explainability, and deployment.
 
 ## Business problem
 
-Unexpected failures of turbines, compressors, pumps, and generators can cause production losses, safety risks, and expensive repairs. RUL prediction estimates how many operating cycles remain before an asset reaches a defined failure point. A reliable estimate can support condition-based maintenance: teams can prioritize inspections, plan outages, and replace components before failure while avoiding unnecessary early maintenance.
+Unexpected failures of turbines, compressors, pumps, and generators can cause
+production losses, safety risks, and expensive repairs. RUL prediction estimates
+how many operating cycles remain before an asset reaches a defined failure
+point. A reliable estimate can support condition-based maintenance by helping
+teams prioritize inspections, plan outages, and replace components before
+failure while avoiding unnecessary early maintenance.
 
-This portfolio project focuses on the technical workflow behind that decision support. It does not prescribe maintenance actions, and model predictions would require engineering review and validation before operational use.
+This portfolio project focuses on the technical workflow behind that decision
+support. It does not prescribe real maintenance actions. Any operational use
+would require equipment-specific data, engineering review, uncertainty analysis,
+and independent validation.
 
 ## Dataset disclaimer
 
-This project uses NASA's C-MAPSS simulated turbofan engine degradation dataset. The original assets are **aircraft turbofan engines**, not oil and gas or Canadian energy-sector equipment, and the data is not real industrial operating data. The project presents the methodology as transferable to other sensor-equipped rotating machinery—such as turbines, compressors, pumps, and generators—while clearly separating that application framing from the dataset's actual origin.
+This project uses NASA's C-MAPSS simulated turbofan engine degradation dataset.
+The original assets are **simulated aircraft turbofan engines**, not oil and gas,
+Canadian energy-sector, or real industrial equipment. Results from this project
+must not be interpreted as validated performance for turbines, compressors,
+pumps, generators, or other real-world machinery.
 
-The dataset is not included in this repository and is not downloaded during Milestone 1.
+The project presents the methodology as potentially transferable to other
+sensor-equipped rotating machinery while keeping that application framing
+separate from the dataset's actual origin.
 
-## Planned machine-learning pipeline
+The dataset is downloaded separately and is not committed to this repository.
+The current modeling scope is **FD001**, which contains one simulated operating
+condition and one simulated fault mode.
 
-1. Ingest the C-MAPSS text files and assign documented column names.
-2. Validate schema, data types, missing values, engine identifiers, and cycle order.
-3. Calculate the RUL target for each engine cycle without leaking future information into model inputs.
-4. Explore operating conditions and sensor degradation patterns.
-5. Engineer reproducible time-series features using training data only where fitting is required.
-6. Train baseline and tree-based regression models.
-7. Evaluate models with regression metrics, NASA's asymmetric scoring function, and engine-level diagnostics.
-8. Save selected artifacts and present results through clear figures and a lightweight application.
+## Current status
 
-No models or analysis results are produced in this milestone.
+- **Milestones 1-4 are complete:** project setup, dataset documentation,
+  validation and exploration, leakage-safe targets, temporal features, and
+  preprocessing.
+- **Milestone 5 is in progress:** a mean `DummyRegressor` baseline is
+  implemented and tested.
+- **Next task:** define and document the evaluation protocol, then evaluate the
+  mean baseline on engine-separated validation data.
+- Linear Regression, tree-based models, trustworthy reported metrics, and the
+  production application have not been implemented yet.
+
+## Current machine-learning workflow
+
+1. Load the C-MAPSS text files and assign documented column names.
+2. Validate required columns, missing and infinite values, duplicate
+   engine-cycle records, and cycle order.
+3. Explore FD001 engine lifetimes, operating settings, sensor variability, and
+   degradation patterns.
+4. Calculate an **uncapped RUL target** for every training cycle.
+5. Split the development data by `unit_number` so complete engine trajectories
+   remain together.
+6. Create temporal features independently for each engine using only the
+   current and previous cycles.
+7. Fit variance filtering and feature scaling on training engines only, then
+   reuse the fitted preprocessing pipeline for validation data.
+8. Train a mean `DummyRegressor` as the minimum baseline that later models must
+   beat.
+9. Evaluate the baseline using the documented validation protocol before adding
+   candidate regression models.
+
+```text
+Raw FD001 training data
+        |
+        v
+Validate and add uncapped RUL
+        |
+        v
+Split complete engines into training and validation
+        |
+        v
+Build per-engine temporal features
+        |
+        v
+Fit preprocessing on training engines only
+        |
+        v
+Train mean baseline -> validate -> compare later models
+```
+
+## Leakage-safe feature preparation
+
+The current feature workflow:
+
+- Retains the current cycle, operational settings, and raw sensor values.
+- Adds rolling sensor means over the current and previous four cycles by
+  default.
+- Adds rolling sensor standard deviations over the same window.
+- Adds cycle-to-cycle sensor differences.
+- Restarts every rolling calculation and difference at each engine boundary.
+- Excludes `unit_number` and `remaining_useful_life` from model inputs.
+- Removes features that are constant in the training split.
+- Standardizes retained features using statistics learned from training data
+  only.
+
+The feature definitions and FD001 verification are documented in
+[docs/milestone_4_features.md](docs/milestone_4_features.md).
+
+## Evaluation protocol direction
+
+The evaluation implementation is the next project step. The initial protocol
+will follow these rules:
+
+- Use uncapped RUL as the first target definition.
+- Keep complete engines separated between training and validation.
+- Keep NASA's official FD001 test trajectories and `RUL_FD001.txt` untouched
+  while choosing features and models.
+- Initially evaluate predictions across all validation cycles using MAE, RMSE,
+  and R-squared.
+- Add NASA's asymmetric score, near-failure performance, and engine-level
+  diagnostics after the core metrics are understood and verified.
+
+The last row of each complete run-to-failure validation engine is not a useful
+endpoint benchmark because every such row has true RUL equal to zero. Official
+endpoint evaluation will instead use the last observed row of each truncated
+NASA test trajectory together with `RUL_FD001.txt`. If endpoint-like validation
+is needed during development, leakage-safe artificial cutoff snapshots will be
+created later.
+
+Future prediction-uncertainty calibration will also use engine-separated
+calibration data. The final NASA test set will not be reused for calibration.
 
 ## Repository structure
 
 ```text
 energy-predictive-maintenance/
-|-- app/                    # Future lightweight presentation application
-|-- configs/                # Future project configuration files
+|-- app/                    # Future Streamlit presentation application
+|-- configs/                # Future reproducible project configuration
 |-- data/
-|   |-- raw/                # Original, immutable dataset files (ignored)
+|   |-- raw/                # Original, immutable source files (ignored)
 |   |-- interim/            # Intermediate transformed data (ignored)
 |   `-- processed/          # Model-ready data (ignored)
+|-- docs/                   # Dataset and milestone documentation
 |-- models/                 # Trained model artifacts (ignored)
 |-- notebooks/              # Exploratory analysis notebooks
 |-- reports/
-|   `-- figures/            # Generated report figures
-|-- sql/                    # Reusable SQL queries
+|   `-- figures/            # Generated evaluation figures
+|-- sql/                    # Future reusable SQL queries
 |-- src/
-|   |-- data/               # Data loading and validation
-|   |-- evaluation/         # Model evaluation
-|   |-- features/           # Feature engineering
-|   `-- models/             # Training and prediction code
-|-- tests/                  # Automated tests
+|   |-- data/               # Loading, validation, targets, splitting, preparation
+|   |-- evaluation/         # Evaluation metrics and diagnostics
+|   |-- features/           # Temporal feature engineering and preprocessing
+|   `-- models/             # Baseline training and prediction
+|-- tests/                  # Automated unit and workflow tests
 |-- .gitignore
 |-- LICENSE
 |-- README.md
@@ -71,7 +175,8 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-If PowerShell blocks the activation script, allow locally created scripts for your user and retry:
+If PowerShell blocks the activation script, allow locally created scripts for
+your user and retry:
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
@@ -94,15 +199,28 @@ deactivate
 
 - [x] Milestone 1: Create the project scaffold and development foundation
 - [x] Milestone 2: Acquire and document the C-MAPSS dataset
-- [x] Milestone 3: Load, validate, and explore the data
-- [x] Milestone 4: Build leakage-safe RUL targets and features
-- Milestone 4 feature definitions and FD001 verification are documented in
-[docs/milestone_4_features.md](docs/milestone_4_features.md).
-- [ ] Milestone 5: Train baseline and candidate regression models
+- [x] Milestone 3: Load, validate, clean, and explore FD001
+- [x] Milestone 4: Build leakage-safe RUL targets, features, and preprocessing
+- [ ] Milestone 5: Establish trustworthy baselines and train candidate models
+  - Mean `DummyRegressor` implemented and tested
+  - Baseline evaluation protocol is next
+  - Candidate models follow only after baseline evaluation
 - [ ] Milestone 6: Evaluate, interpret, and compare models
-- [ ] Milestone 7: Package the prediction workflow and presentation app
-- [ ] Milestone 8: Finalize documentation and portfolio narrative
+  - Core regression metrics
+  - NASA asymmetric score
+  - Near-failure and engine-level diagnostics
+  - Explainability and failure-case analysis
+- [ ] Milestone 7: Add engine-separated uncertainty calibration and risk
+  assessment
+- [ ] Milestone 8: Simulate maintenance timing and hypothetical cost policies
+- [ ] Milestone 9: Operationalize the workflow with MLflow, FastAPI, Streamlit,
+  Docker, automated testing, CI, and deployment
+- [ ] Milestone 10: Finalize documentation, limitations, and portfolio narrative
+
+Future maintenance and cost outputs will be explicitly presented as hypothetical
+decision-support simulations, not validated maintenance recommendations.
 
 ## License
 
-Project code is available under the [MIT License](LICENSE). The NASA dataset is distributed separately and remains subject to its source terms.
+Project code is available under the [MIT License](LICENSE). The NASA dataset is
+distributed separately and remains subject to its source terms.
