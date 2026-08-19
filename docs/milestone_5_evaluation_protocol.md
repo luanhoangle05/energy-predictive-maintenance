@@ -4,7 +4,7 @@
 
 The initial modeling target is uncapped Remaining Useful Life
 
-# Development split
+## Development split
 
 Complete engine trajectories are split by engine ID
 
@@ -23,3 +23,8 @@ Complete engine trajectories are split by engine ID
 The NASA FD001 test trajectories and `RUL_FD001.txt` are kept untouched during development
 
 They will be used only for final endpoint evaluation after model and feature decisions are complete
+
+## Initial evaluation metrics
+
+The first model comparison uses predictions from every cycle belonging to the held-out validation engines
+
