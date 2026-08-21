@@ -87,3 +87,23 @@ def test_decision_tree_regressor_learns_threshold_relationship() -> None:
     assert predictions.tolist() == pytest.approx(
         [10.0, 10.0, 2.0, 2.0]
     )
+
+def test_decision_tree_regressor_applies_complexity_controls() -> None:
+    training_features = pd.DataFrame(
+        {
+            "sensor_1": [0.0, 1.0, 2.0, 3.0],
+        }
+    )
+    training_target = pd.Series(
+        [10.0, 10.0, 2.0, 2.0]
+    )
+
+    model = train_decision_tree_regressor(
+        training_features,
+        training_target,
+        max_depth=1,
+        min_samples_leaf=2,
+    )
+
+    assert model.max_depth == 1
+    assert model.min_samples_leaf == 2

@@ -38,12 +38,16 @@ def train_linear_regression(
     return model
 
 def train_decision_tree_regressor(
-    features: pd.DataFrame,
-    target: pd.Series,
-    random_state: int = 42,
-) -> Any:
-    """Train an unrestricted Decision Tree baseline."""
+        features: pd.DataFrame,
+        target: pd.Series,
+        max_depth: int | None = None,
+        min_samples_leaf: int = 1,
+        random_state: int = 42,
+    ) -> Any:
+    """Train a Decision Tree RUL model"""
     model = DecisionTreeRegressor(
+        max_depth=max_depth,
+        min_samples_leaf=min_samples_leaf,
         random_state=random_state,
     )
     model.fit(features, target)

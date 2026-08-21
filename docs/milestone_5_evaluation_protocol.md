@@ -124,3 +124,66 @@ The unrestricted tree is overfitting ( MAE, RMSE =0 and R^2=1) but performed kin
 The tree performed better than the mean baseline but worse than Linear Regression on validation data. This provides evidence that tree complexity should be controlled before evaluating more advanced tree ensembles.
 
 The first tuning investigation will focus on `max_depth` and `min_samples_leaf`, which directly limit tree complexity. Hyperparameter choices will not use the NASA FD001 test data.
+
+## Decision Tree tuning protocol
+
+Decision Tree hyperparameters will be selected using only the training engines
+
+Five-fold group cross-validation will be used. Engine ID will be the grouping variable so that every cycle belonging to one engine remains entirely within 1 fold
+
+The held-out development-validation engines will not be used to select the Decision Tree hyperparameters
+After selection, the chosen configuration will be fited using all training engines and evaluated once on the held-out validation engines
+
+The NASA FD001 test trajectories remain untouched
+
+### Initial hyperparameter grid
+
+The initial experiment will control only two parameters:
+
+| Hyperparameter | Candidate values |
+|---|---|
+| `max_depth` | 4, 8, 12 |
+| `min_samples_leaf` | 1, 10, 30 |
+
+This creates nine configurations. With five cross-validation folds, the experiment requires 45 model fits.
+
+`max_depth` limits how many sequential splits the tree can create. The unrestricted baseline reached a depth of 31.
+
+`min_samples_leaf` requires every terminal leaf to contain a minimum number of training observations. The unrestricted baseline created 14,300 leaves from 16,561 training rows.
+
+Other tree hyperparameters will remain at their defaults during this initial experiment so that the comparison stays small and interpretable.
+
+### Selection metric
+
+Mean cross-validation RMSE will be the primary selection metric because it penalizes large RUL errors strongly.
+
+Mean cross-validation MAE will also be reported for interpretability.
+
+If configurations perform similarly, the simpler tree with lower depth and/or larger leaves will be preferred.
+
+## Controlled Decision Tree results
+
+Nine Decision Tree configurations were compared using five-fold cross-validation grouped by engine ID. Only the 80 training engines participated in hyperparameter selection.
+
+The lowest mean cross-validation RMSE was obtained by all three depth-4 configurations:
+
+| Max depth | Minimum leaf size | Mean CV MAE | Mean CV RMSE |
+|---:|---:|---:|---:|
+| 4 | 1 | 29.33 | 40.80 |
+| 4 | 10 | 29.33 | 40.80 |
+| 4 | 30 | 29.33 | 40.80 |
+
+Deeper configurations produced higher cross-validation errors. Because the depth-4 configurations tied at the displayed precision, `max_depth=4` and `min_samples_leaf=30` were selected using the documented preference for the more strongly constrained configuration.
+
+The selected tree was then fitted using all 80 training engines and evaluated once on the 20 outer validation engines.
+
+| Dataset | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Training | 27.49 cycles | 38.37 cycles | 0.6964 |
+| Validation | 25.36 cycles | 32.38 cycles | 0.7568 |
+
+The selected tree had a fitted depth of 4 and 16 leaves, compared with depth 31 and 14,300 leaves for the unrestricted tree.
+
+Complexity control substantially improved validation performance and removed the extreme training-data memorization. The selected Decision Tree performed slightly worse than clipped Linear Regression, so Linear Regression remains the strongest development baseline at this stage.
+
+No NASA FD001 test trajectories were used for tuning or evaluation.
