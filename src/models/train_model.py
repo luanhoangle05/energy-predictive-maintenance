@@ -5,6 +5,7 @@ from typing import Any
 import pandas as pd
 
 from sklearn.dummy import DummyRegressor
+from sklearn.linear_model import LinearRegression
 
 def train_dummy_regressor(
         features: pd.DataFrame,
@@ -26,3 +27,11 @@ def train_dummy_regressor(
 
     return model
 
+def train_linear_regression(
+        features: pd.DataFrame,
+        target: pd.Series
+) -> Any:
+    """Train a Linear Regression RUL model."""
+    model = LinearRegression()
+    model.fit(features,target)
+    return model
