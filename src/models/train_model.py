@@ -6,6 +6,7 @@ import pandas as pd
 
 from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
 
 def train_dummy_regressor(
         features: pd.DataFrame,
@@ -34,4 +35,17 @@ def train_linear_regression(
     """Train a Linear Regression RUL model."""
     model = LinearRegression()
     model.fit(features,target)
+    return model
+
+def train_decision_tree_regressor(
+    features: pd.DataFrame,
+    target: pd.Series,
+    random_state: int = 42,
+) -> Any:
+    """Train an unrestricted Decision Tree baseline."""
+    model = DecisionTreeRegressor(
+        random_state=random_state,
+    )
+    model.fit(features, target)
+
     return model

@@ -2,8 +2,9 @@ import pandas as pd
 import pytest
 
 from src.models.train_model import (
+    train_decision_tree_regressor,
     train_dummy_regressor,
-    train_linear_regression
+    train_linear_regression,
 )
 
 def test_dummy_regressor_baseline_predicts_mean_target() -> None:
@@ -62,3 +63,27 @@ def test_linear_regression_learns_linear_relationship() -> None:
     predictions = model.predict(prediction_features)
 
     assert predictions.tolist() == pytest.approx([11.0])
+
+def test_decision_tree_regressor_learns_threshold_relationship() -> None:
+
+    # The relationship has a clear threshold
+    # sensor_1 below 2 -> target 10
+    # sensor_1 at least 2 -> target 2
+    training_features = pd.DataFrame(
+        {
+            "sensor_1": [0.0, 1.0, 2.0, 3.0],
+        }
+    )
+    training_target = pd.Series(
+        [10.0, 10.0, 2.0, 2.0]
+    )
+
+    model = train_decision_tree_regressor(
+        training_features,
+        training_target,
+    )
+    predictions = model.predict(training_features)
+
+    assert predictions.tolist() == pytest.approx(
+        [10.0, 10.0, 2.0, 2.0]
+    )

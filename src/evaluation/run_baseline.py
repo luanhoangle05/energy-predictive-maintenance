@@ -8,7 +8,7 @@ from src.data.load_data import load_cmapss_file
 from src.data.prepare_data import prepare_training_validation_data
 
 from src.models.predict import predict_rul
-from src.models.train_model import train_dummy_regressor,train_linear_regression
+from src.models.train_model import train_dummy_regressor,train_linear_regression,train_decision_tree_regressor
 from src.evaluation.evaluate_model import regression_metrics
 
 def main() -> None:
@@ -61,6 +61,30 @@ def main() -> None:
         linear_predictions
     )
 
+    decision_tree_model = train_decision_tree_regressor(
+        training_features,
+        training_targets,
+    )
+
+    tree_training_predictions = predict_rul(
+        decision_tree_model,
+        training_features,
+    )
+
+    tree_validation_predictions = predict_rul(
+        decision_tree_model,
+        validation_features,
+    )
+
+    tree_training_metrics = regression_metrics(
+        training_targets.to_numpy(),
+        tree_training_predictions,
+    )
+
+    tree_validation_metrics = regression_metrics(
+        validation_targets.to_numpy(),
+        tree_validation_predictions,
+    )
 
 
     print(f"Training rows: {len(training_features)}")
@@ -83,6 +107,24 @@ def main() -> None:
     print(f"MAE: {linear_clipped_metrics['mae']:.2f} cycles")
     print(f"RMSE: {linear_clipped_metrics['rmse']:.2f} cycles")
     print(f"R²: {linear_clipped_metrics['r2']:.4f}")
+
+    print("\nUnrestricted Decision Tree — training")
+    print(f"MAE: {tree_training_metrics['mae']:.2f} cycles")
+    print(f"RMSE: {tree_training_metrics['rmse']:.2f} cycles")
+    print(f"R²: {tree_training_metrics['r2']:.4f}")
+
+    print("\nUnrestricted Decision Tree — validation")
+    print(f"MAE: {tree_validation_metrics['mae']:.2f} cycles")
+    print(f"RMSE: {tree_validation_metrics['rmse']:.2f} cycles")
+    print(f"R²: {tree_validation_metrics['r2']:.4f}")
+    print(
+        "Decision Tree depth: "
+        f"{decision_tree_model.get_depth()}"
+    )
+    print(
+        "Decision Tree leaves: "
+        f"{decision_tree_model.get_n_leaves()}"
+    )
 
 if __name__ == "__main__":
     main()

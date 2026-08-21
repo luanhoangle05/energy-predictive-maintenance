@@ -103,3 +103,24 @@ The clipped result represents the domain-valid Linear Regression output for late
 Compared with the mean baseline (Dummy Regressor), the clipped Linear Regression result reduced MAE by approx 55.8% and RMSE by approx 52.4%
 
 These remain development-validation results and do not use the NASA FD001 test set.
+
+## Unrestricted Decision Tree baseline
+
+An unrestricted `DecisionTreeRegressor` was fitted using the same training engines and evaluated one the same validation engines
+
+| Diagnostic | Result |
+|---|---:|
+| Maximum fitted depth | 31 |
+| Leaf nodes | 14,300 |
+| Training rows | 16,561 |
+
+| Dataset | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Training | 0.00 cycles | 0.00 cycles | 1.0000 |
+| Validation | 34.30 cycles | 48.11 cycles | 0.4630 |
+
+The unrestricted tree is overfitting ( MAE, RMSE =0 and R^2=1) but performed kinda worse on unseen validation engines
+
+The tree performed better than the mean baseline but worse than Linear Regression on validation data. This provides evidence that tree complexity should be controlled before evaluating more advanced tree ensembles.
+
+The first tuning investigation will focus on `max_depth` and `min_samples_leaf`, which directly limit tree complexity. Hyperparameter choices will not use the NASA FD001 test data.
