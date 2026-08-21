@@ -234,3 +234,43 @@ A controlled Random Forest experiment will investigate:
 `n_estimators` will remain fixed at 100, and `max_features` will remain fixed at 1.0. This isolates tree-complexity effects and creates nine configurations.
 
 The outer validation engines and NASA test data remain untouched during tuning.
+
+## Random Forest tuning results
+
+Nine 100-tree Random Forest configurations were evaluated using five-fold cross-validation grouped by engine ID.
+
+All depth-4 configurations achieved the best displayed grouped-CV results:
+
+| Max depth | Minimum leaf size | Mean CV MAE | Mean CV RMSE |
+|---:|---:|---:|---:|
+| 4 | 1 | 27.90 | 39.36 |
+| 4 | 10 | 27.90 | 39.36 |
+| 4 | 30 | 27.90 | 39.36 |
+
+Following the documented simpler-model tie rule, `max_depth=4` and `min_samples_leaf=30` were selected.
+
+The selected forest was fitted using all 80 training engines and evaluated once on the 20 outer validation engines.
+
+| Dataset | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Training | 26.33 cycles | 37.18 cycles | 0.7150 |
+| Validation | 23.74 cycles | 30.52 cycles | 0.7838 |
+
+The selected Random Forest produced the strongest outer-validation result so far, slightly outperforming clipped Linear Regression and the selected single Decision Tree.
+
+This is the strongest current development candidate, not a final production model. Gradient Boosting and additional RUL diagnostics have not yet been evaluated, and the NASA FD001 test data remains untouched.
+
+## Current outer-validation model comparison
+
+All models below were evaluated using the same 20 held-out validation engines.
+
+| Model | Validation MAE | Validation RMSE | Validation R² |
+|---|---:|---:|---:|
+| Mean baseline | 55.36 cycles | 65.72 cycles | -0.0019 |
+| Clipped Linear Regression | 24.47 cycles | 31.25 cycles | 0.7734 |
+| Selected Decision Tree | 25.36 cycles | 32.38 cycles | 0.7568 |
+| Selected Random Forest | **23.74 cycles** | **30.52 cycles** | **0.7838** |
+
+The selected Random Forest currently has the lowest validation MAE and RMSE and the highest validation R². 
+It is therefore the strongest development candidate evaluated so far, 
+but final model selection has not yet occurred.
