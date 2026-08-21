@@ -274,3 +274,28 @@ All models below were evaluated using the same 20 held-out validation engines.
 The selected Random Forest currently has the lowest validation MAE and RMSE and the highest validation R². 
 It is therefore the strongest development candidate evaluated so far, 
 but final model selection has not yet occurred.
+
+## Initial Gradient Boosting experiment
+
+Gradient Boosting is the next candidate model. It builds a sequence of small Decision Trees, where each new tree attempts to reduce the prediction errors remaining from the earlier trees.
+
+This differs from Random Forest:
+
+- Random Forest trains many randomized trees and averages their predictions.
+- Gradient Boosting trains trees sequentially to correct previous errors.
+
+The initial experiment will use `GradientBoostingRegressor` with its standard reproducible configuration:
+
+| Hyperparameter | Initial value |
+|---|---:|
+| `n_estimators` | 100 |
+| `learning_rate` | 0.1 |
+| `max_depth` | 3 |
+| `min_samples_leaf` | 1 |
+| `random_state` | 42 |
+
+The initial model will be evaluated using five-fold cross-validation grouped by engine ID. Only the 80 training engines will participate.
+
+Mean cross-validation RMSE remains the primary comparison metric, with mean MAE also reported.
+
+The outer validation engines and NASA FD001 test data remain untouched until a Gradient Boosting configuration has been selected.
