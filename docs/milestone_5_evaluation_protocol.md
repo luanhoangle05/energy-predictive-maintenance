@@ -187,3 +187,28 @@ The selected tree had a fitted depth of 4 and 16 leaves, compared with depth 31 
 Complexity control substantially improved validation performance and removed the extreme training-data memorization. The selected Decision Tree performed slightly worse than clipped Linear Regression, so Linear Regression remains the strongest development baseline at this stage.
 
 No NASA FD001 test trajectories were used for tuning or evaluation.
+
+## Initial Random Forest experiment
+
+Random Forest is the next candidate model because it averages predictions from many randomized Decision Trees. Averaging can reduce the high variance and overfitting observed in the unrestricted single-tree baseline.
+
+The first experiment will use a reproducible, otherwise default Random Forest configuration:
+
+| Hyperparameter | Initial value |
+|---|---:|
+| `n_estimators` | 100 |
+| `max_depth` | None |
+| `min_samples_leaf` | 1 |
+| `max_features` | 1.0 |
+| `bootstrap` | True |
+| `random_state` | 42 |
+
+`n_estimators=100` means that predictions are averaged across 100 trees. It primarily controls ensemble stability and computational cost.
+
+The initial Random Forest will be evaluated using the same five-fold cross-validation grouped by engine ID. Only the 80 training engines will participate.
+
+Mean cross-validation RMSE remains the primary comparison metric, with mean MAE also reported.
+
+The outer 20 validation engines will remain untouched until an initial Random Forest configuration has been assessed and any controlled tuning choices have been made.
+
+The NASA FD001 test data will not be used.
