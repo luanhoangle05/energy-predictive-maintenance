@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from src.models.train_model import train_model
+from src.models.train_model import train_dummy_regressor
 
 def test_dummy_regressor_baseline_predicts_mean_target() -> None:
 
@@ -21,7 +21,7 @@ def test_dummy_regressor_baseline_predicts_mean_target() -> None:
 
     target = pd.Series([9.0, 6.0, 3.0])
 
-    model = train_model(features,target)
+    model = train_dummy_regressor(features,target)
     predictions = model.predict(features)
 
     assert predictions.tolist() == pytest.approx(

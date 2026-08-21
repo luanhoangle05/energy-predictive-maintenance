@@ -6,7 +6,7 @@ import pandas as pd
 
 from sklearn.dummy import DummyRegressor
 
-def train_model(
+def train_dummy_regressor(
         features: pd.DataFrame,
         target: pd.Series
 ) -> Any:

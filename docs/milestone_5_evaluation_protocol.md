@@ -57,3 +57,26 @@ An R² value can be negative when a model performs worse than the reference mean
 Metrics calculated across every validation row give more influence to engines with longer trajectories because they contribute more cycles.
 
 Engine-level diagnostics and near-failure analysis will be added later to ensure that overall row-level metrics do not hide poor performance on particular engines or important RUL ranges.
+
+## Mean baseline results
+
+The mean `DummyRegressor` was fitted using the training engines and evaluated across every cycle from the held-out validation engines.
+
+| Setting | Value |
+|---|---:|
+| Validation size | 20% of engine IDs |
+| Random state | 42 |
+| Training rows | 16,561 |
+| Validation rows | 4,070 |
+| Retained features | 63 |
+| Constant prediction | 108.38 cycles |
+
+| Metric | Result |
+|---|---:|
+| MAE | 55.36 cycles |
+| RMSE | 65.72 cycles |
+| R² | -0.0019 |
+
+The mean baseline does not use sensor information to vary its predictions. It establishes a reference that future models should improve upon by achieving lower MAE and RMSE and a higher R².
+
+These are development-validation results, not final NASA FD001 test results.
