@@ -43,12 +43,19 @@ condition and one simulated fault mode.
 - **Milestones 1-4 are complete:** project setup, dataset documentation,
   validation and exploration, leakage-safe targets, temporal features, and
   preprocessing.
-- **Milestone 5 is in progress:** a mean `DummyRegressor` baseline is
-  implemented and tested.
-- **Next task:** define and document the evaluation protocol, then evaluate the
-  mean baseline on engine-separated validation data.
-- Linear Regression, tree-based models, trustworthy reported metrics, and the
-  production application have not been implemented yet.
+- **Milestone 5 is in progress:** the mean baseline, Linear Regression,
+  Decision Tree, and Random Forest models are implemented and tested.
+- Decision Tree and Random Forest complexity settings are compared using
+  five-fold cross-validation grouped by engine ID.
+- Preprocessing is fitted separately inside each cross-validation training
+  fold before transforming its validation engines.
+- The controlled Random Forest is the strongest current development candidate:
+  MAE 23.74 cycles, RMSE 30.52 cycles, and R-squared 0.7838.
+- These are row-level development-validation results. NASA's official FD001
+  test data remains untouched.
+- **Next task:** evaluate Gradient Boosting using the same leakage-safe
+  protocol.
+- The project currently contains 28 passing automated tests.
 
 ## Current machine-learning workflow
 
@@ -64,10 +71,11 @@ condition and one simulated fault mode.
    current and previous cycles.
 7. Fit variance filtering and feature scaling on training engines only, then
    reuse the fitted preprocessing pipeline for validation data.
-8. Train a mean `DummyRegressor` as the minimum baseline that later models must
-   beat.
-9. Evaluate the baseline using the documented validation protocol before adding
-   candidate regression models.
+8. Train the mean, Linear Regression, Decision Tree, and Random Forest models.
+9. Tune tree complexity using five-fold grouped cross-validation with
+   fold-local preprocessing.
+10. Fit selected configurations using all training engines and evaluate them
+    on the held-out development-validation engines.
 
 ```text
 Raw FD001 training data
@@ -82,10 +90,16 @@ Split complete engines into training and validation
 Build per-engine temporal features
         |
         v
-Fit preprocessing on training engines only
+Fit outer preprocessing on training engines only
         |
         v
-Train mean baseline -> validate -> compare later models
+Train baselines and candidate models
+        |
+        v
+Tune with engine-grouped folds and fold-local preprocessing
+        |
+        v
+Evaluate selected configurations on held-out validation engines
 ```
 
 ## Leakage-safe feature preparation
@@ -106,19 +120,24 @@ The current feature workflow:
 The feature definitions and FD001 verification are documented in
 [docs/milestone_4_features.md](docs/milestone_4_features.md).
 
-## Evaluation protocol direction
+## Evaluation protocol
 
-The evaluation implementation is the next project step. The initial protocol
-will follow these rules:
+The current evaluation protocol follows these rules:
 
 - Use uncapped RUL as the first target definition.
 - Keep complete engines separated between training and validation.
 - Keep NASA's official FD001 test trajectories and `RUL_FD001.txt` untouched
   while choosing features and models.
-- Initially evaluate predictions across all validation cycles using MAE, RMSE,
-  and R-squared.
+- Evaluate predictions across all validation cycles using MAE, RMSE, and
+  R-squared.
+- Tune Decision Tree and Random Forest complexity using five-fold grouped
+  cross-validation within the 80 training engines.
+- Fit variance filtering and scaling separately inside each cross-validation
+  training fold before transforming that fold's validation engines.
+- Fit selected configurations using all 80 training engines, then evaluate
+  once on the 20 held-out development-validation engines.
 - Add NASA's asymmetric score, near-failure performance, and engine-level
-  diagnostics after the core metrics are understood and verified.
+  diagnostics after the current model comparison is complete.
 
 The last row of each complete run-to-failure validation engine is not a useful
 endpoint benchmark because every such row has true RUL equal to zero. Official
@@ -150,7 +169,7 @@ energy-predictive-maintenance/
 |   |-- data/               # Loading, validation, targets, splitting, preparation
 |   |-- evaluation/         # Evaluation metrics and diagnostics
 |   |-- features/           # Temporal feature engineering and preprocessing
-|   `-- models/             # Baseline training and prediction
+|   `-- models/             # Baseline and candidate-model training and prediction
 |-- tests/                  # Automated unit and workflow tests
 |-- .gitignore
 |-- LICENSE
@@ -202,9 +221,12 @@ deactivate
 - [x] Milestone 3: Load, validate, clean, and explore FD001
 - [x] Milestone 4: Build leakage-safe RUL targets, features, and preprocessing
 - [ ] Milestone 5: Establish trustworthy baselines and train candidate models
-  - Mean `DummyRegressor` implemented and tested
-  - Baseline evaluation protocol is next
-  - Candidate models follow only after baseline evaluation
+  - Mean, Linear Regression, controlled Decision Tree, and controlled Random
+    Forest implemented
+  - MAE, RMSE, and R-squared implemented
+  - Engine-grouped cross-validation uses fold-local preprocessing
+  - Random Forest is the strongest current development candidate
+  - Gradient Boosting is next
 - [ ] Milestone 6: Evaluate, interpret, and compare models
   - Core regression metrics
   - NASA asymmetric score

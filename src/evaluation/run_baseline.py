@@ -17,6 +17,12 @@ from src.models.train_model import (
     train_random_forest_regressor,
 )
 
+from src.features.build_features import build_features
+
+from src.features.preprocess_features import (
+create_feature_preprocessor
+)
+
 
 def cross_validate_decision_tree(
     features: pd.DataFrame,
@@ -38,12 +44,22 @@ def cross_validate_decision_tree(
         targets,
         groups=engine_groups,
     ):
-        fold_training_features = features.iloc[
+        fold_training_features_before_preprocessing = features.iloc[
             fold_training_indices
         ]
-        fold_validation_features = features.iloc[
+        fold_validation_features_before_preprocessing = features.iloc[
             fold_validation_indices
         ]
+
+        fold_preprocessor = create_feature_preprocessor()
+
+        fold_training_features = fold_preprocessor.fit_transform(
+            fold_training_features_before_preprocessing
+        )
+
+        fold_validation_features = fold_preprocessor.transform(
+            fold_validation_features_before_preprocessing
+        )
         fold_training_targets = targets.iloc[
             fold_training_indices
         ]
@@ -97,12 +113,22 @@ def cross_validate_random_forest(
         targets,
         groups=engine_groups,
     ):
-        fold_training_features = features.iloc[
+        fold_training_features_before_preprocessing = features.iloc[
             fold_training_indices
         ]
-        fold_validation_features = features.iloc[
+        fold_validation_features_before_preprocessing = features.iloc[
             fold_validation_indices
         ]
+
+        fold_preprocessor = create_feature_preprocessor()
+
+        fold_training_features = fold_preprocessor.fit_transform(
+            fold_training_features_before_preprocessing
+        )
+
+        fold_validation_features = fold_preprocessor.transform(
+            fold_validation_features_before_preprocessing
+        )
         fold_training_targets = targets.iloc[
             fold_training_indices
         ]
@@ -149,6 +175,16 @@ def main() -> None:
         preprocessor,
     ) = prepare_training_validation_data(raw_data)
 
+    training_source_data = raw_data.loc[
+        training_features.index
+    ].copy()
+
+    training_features_before_preprocessing = build_features(
+        training_source_data,
+        rolling_window=5,
+    )
+
+
     training_engine_groups = raw_data.loc[
         training_features.index,
         "unit_number",
@@ -161,6 +197,19 @@ def main() -> None:
     validation_engine_ids = set(validation_engine_groups.unique())
     overlapping_engine_ids = (
         training_engine_ids & validation_engine_ids
+    )
+
+    print(
+        "CV features before preprocessing: "
+        f"{training_features_before_preprocessing.shape[1]}"
+    )
+    print(
+        "CV feature indexes aligned: "
+        f"{training_features_before_preprocessing.index.equals(training_targets.index)}"
+    )
+    print(
+        "CV group indexes aligned: "
+        f"{training_features_before_preprocessing.index.equals(training_engine_groups.index)}"
     )
 
     print(f"Training engines: {len(training_engine_ids)}")
@@ -269,7 +318,7 @@ def main() -> None:
     for max_depth in max_depth_values:
         for min_samples_leaf in min_samples_leaf_values:
             cv_metrics = cross_validate_decision_tree(
-                training_features,
+                training_features_before_preprocessing,
                 training_targets,
                 training_engine_groups,
                 max_depth=max_depth,
@@ -333,7 +382,7 @@ def main() -> None:
     for max_depth in forest_max_depth_values:
         for min_samples_leaf in forest_min_samples_leaf_values:
             cv_metrics = cross_validate_random_forest(
-                training_features,
+                training_features_before_preprocessing,
                 training_targets,
                 training_engine_groups,
                 n_estimators=100,
