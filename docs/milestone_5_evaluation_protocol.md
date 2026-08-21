@@ -212,3 +212,25 @@ Mean cross-validation RMSE remains the primary comparison metric, with mean MAE 
 The outer 20 validation engines will remain untouched until an initial Random Forest configuration has been assessed and any controlled tuning choices have been made.
 
 The NASA FD001 test data will not be used.
+
+## Initial Random Forest cross-validation
+
+The initial 100-tree Random Forest used default tree complexity and was evaluated using the same five engine-grouped training folds.
+
+| Model | Mean CV MAE | Mean CV RMSE |
+|---|---:|---:|
+| Selected Decision Tree | 29.33 cycles | 40.80 cycles |
+| Initial Random Forest | 28.57 cycles | 41.28 cycles |
+
+The initial Random Forest slightly improved MAE but produced a slightly higher RMSE. It therefore did not improve the primary selection metric.
+
+A controlled Random Forest experiment will investigate:
+
+| Hyperparameter | Candidate values |
+|---|---|
+| `max_depth` | 4, 8, None |
+| `min_samples_leaf` | 1, 10, 30 |
+
+`n_estimators` will remain fixed at 100, and `max_features` will remain fixed at 1.0. This isolates tree-complexity effects and creates nine configurations.
+
+The outer validation engines and NASA test data remain untouched during tuning.

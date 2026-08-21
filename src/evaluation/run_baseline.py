@@ -12,7 +12,12 @@ from src.data.load_data import load_cmapss_file
 from src.data.prepare_data import prepare_training_validation_data
 
 from src.models.predict import predict_rul
-from src.models.train_model import train_dummy_regressor,train_linear_regression,train_decision_tree_regressor
+from src.models.train_model import (
+train_dummy_regressor,
+train_linear_regression,
+train_decision_tree_regressor,
+train_random_forest_regressor
+)
 from src.evaluation.evaluate_model import regression_metrics
 
 def main() -> None:
@@ -172,6 +177,16 @@ def main() -> None:
             training_engine_ids & validation_engine_ids
     )
 
+    initial_forest_cv = cross_validate_random_forest(
+        training_features,
+        training_targets,
+        training_engine_groups,
+        n_estimators=100,
+        max_depth=None,
+        min_samples_leaf=1,
+        max_features=1.0,
+    )
+
     print(f"Training engines: {len(training_engine_ids)}")
     print(f"Validation engines: {len(validation_engine_ids)}")
     print(f"Overlapping engines: {len(overlapping_engine_ids)}")
@@ -228,6 +243,17 @@ def main() -> None:
     print(f"Depth: {selected_tree_model.get_depth()}")
     print(f"Leaves: {selected_tree_model.get_n_leaves()}")
 
+    print("\nInitial Random Forest cross-validation")
+    print("100 trees, default tree complexity")
+    print(
+        f"Mean CV MAE: "
+        f"{initial_forest_cv['mean_mae']:.2f} cycles"
+    )
+    print(
+        f"Mean CV RMSE: "
+        f"{initial_forest_cv['mean_rmse']:.2f} cycles"
+    )
+
 def cross_validate_decision_tree(
     features: pd.DataFrame,
     targets: pd.Series,
@@ -268,6 +294,70 @@ def cross_validate_decision_tree(
             fold_training_targets,
             max_depth=max_depth,
             min_samples_leaf=min_samples_leaf,
+        )
+
+        fold_predictions = predict_rul(
+            fold_model,
+            fold_validation_features,
+        )
+
+        fold_metrics = regression_metrics(
+            fold_validation_targets.to_numpy(),
+            fold_predictions,
+        )
+
+        fold_mae_scores.append(fold_metrics["mae"])
+        fold_rmse_scores.append(fold_metrics["rmse"])
+
+    return {
+        "mean_mae": float(np.mean(fold_mae_scores)),
+        "mean_rmse": float(np.mean(fold_rmse_scores)),
+    }
+
+def cross_validate_random_forest(
+    features: pd.DataFrame,
+    targets: pd.Series,
+    engine_groups: pd.Series,
+    n_estimators: int,
+    max_depth: int | None,
+    min_samples_leaf: int,
+    max_features: float,
+) -> dict[str, float]:
+    """Evaluate one Decision Tree configuration using grouped folds."""
+    group_kfold = GroupKFold(n_splits=5)
+
+    fold_mae_scores = []
+    fold_rmse_scores = []
+
+    for (
+        fold_training_indices,
+        fold_validation_indices,
+    ) in group_kfold.split(
+        features,
+        targets,
+        groups=engine_groups,
+    ):
+        fold_training_features = features.iloc[
+            fold_training_indices
+        ]
+        fold_validation_features = features.iloc[
+            fold_validation_indices
+        ]
+
+        fold_training_targets = targets.iloc[
+            fold_training_indices
+        ]
+        fold_validation_targets = targets.iloc[
+            fold_validation_indices
+        ]
+
+        fold_model = train_random_forest_regressor(
+            fold_training_features,
+            fold_training_targets,
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            min_samples_leaf=min_samples_leaf,
+            max_features=max_features
         )
 
         fold_predictions = predict_rul(
