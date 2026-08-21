@@ -80,3 +80,26 @@ The mean `DummyRegressor` was fitted using the training engines and evaluated ac
 The mean baseline does not use sensor information to vary its predictions. It establishes a reference that future models should improve upon by achieving lower MAE and RMSE and a higher R².
 
 These are development-validation results, not final NASA FD001 test results.
+
+### Linear Regression baseline results
+
+Linear Regression was fitted using the same training engines and evaluated on the same validation cycles as the mean baseline
+
+The raw model produced 162 negative predictions from 4,070 validation rows, approx 4.0% of its predictions
+Its prediction range was -57.84 to 256.17 cycles
+while the true validation target range was 0 to 268 cycles.
+
+Because Remaining Useful Life (RUL) can not be negative, a non-negative post-processing rule was also evaluated by cutting predictions below 0 to 0
+This threshold constraint rather than a value tuned from validation performance
+
+| Model output | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Raw Linear Regression | 25.18 cycles | 31.68 cycles | 0.7672 |
+| Clipped at zero | 24.47 cycles | 31.25 cycles | 0.7734 |
+
+For transparency, both raw and clipped results are retained
+The clipped result represents the domain-valid Linear Regression output for later model comparison
+
+Compared with the mean baseline (Dummy Regressor), the clipped Linear Regression result reduced MAE by approx 55.8% and RMSE by approx 52.4%
+
+These remain development-validation results and do not use the NASA FD001 test set.

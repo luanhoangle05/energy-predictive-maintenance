@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import numpy as np
+
 from src.data.load_data import load_cmapss_file
 from src.data.prepare_data import prepare_training_validation_data
 
@@ -36,14 +38,27 @@ def main() -> None:
 
     linear_model = train_linear_regression(training_features,training_targets)
 
-    linear_prediction = predict_rul(
+    linear_predictions = predict_rul(
         linear_model,
         validation_features
     )
 
+    # Clipping at zero is based on the target’s domain—
+    # RUL cannot be below zero—not on a threshold tuned to improve validation performance.
+    linear_clipped_predictions = np.clip(
+        linear_predictions,
+        a_min=0.0,
+        a_max=None,
+    )
+
+    linear_clipped_metrics = regression_metrics(
+        validation_targets.to_numpy(),
+        linear_clipped_predictions,
+    )
+
     linear_metrics = regression_metrics(
         validation_targets.to_numpy(),
-        linear_prediction
+        linear_predictions
     )
 
 
@@ -59,10 +74,15 @@ def main() -> None:
     print(f"RMSE: {dummy_metrics['rmse']:.2f} cycles")
     print(f"R²: {dummy_metrics['r2']:.4f}")
 
-    print("\nLinear Regression")
+    print("\nRaw Linear Regression")
     print(f"MAE: {linear_metrics['mae']:.2f} cycles")
     print(f"RMSE: {linear_metrics['rmse']:.2f} cycles")
     print(f"R²: {linear_metrics['r2']:.4f}")
+
+    print("\nLinear Regression clipped at zero")
+    print(f"MAE: {linear_clipped_metrics['mae']:.2f} cycles")
+    print(f"RMSE: {linear_clipped_metrics['rmse']:.2f} cycles")
+    print(f"R²: {linear_clipped_metrics['r2']:.4f}")
 
 if __name__ == "__main__":
     main()
