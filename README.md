@@ -44,18 +44,21 @@ condition and one simulated fault mode.
   validation and exploration, leakage-safe targets, temporal features, and
   preprocessing.
 - **Milestone 5 is in progress:** the mean baseline, Linear Regression,
-  Decision Tree, and Random Forest models are implemented and tested.
-- Decision Tree and Random Forest complexity settings are compared using
-  five-fold cross-validation grouped by engine ID.
+  Decision Tree, Random Forest, and Gradient Boosting models are implemented
+  and tested.
+- Decision Tree, Random Forest, and Gradient Boosting configurations are
+  compared using five-fold cross-validation grouped by engine ID.
 - Preprocessing is fitted separately inside each cross-validation training
   fold before transforming its validation engines.
-- The controlled Random Forest is the strongest current development candidate:
-  MAE 23.74 cycles, RMSE 30.52 cycles, and R-squared 0.7838.
+- The selected Gradient Boosting configuration uses 200 estimators, a learning
+  rate of 0.05, maximum tree depth of 2, and minimum leaf size of 30.
+- Gradient Boosting is the strongest current development candidate: MAE 22.04
+  cycles, RMSE 29.03 cycles, and R-squared 0.8045.
 - These are row-level development-validation results. NASA's official FD001
   test data remains untouched.
-- **Next task:** evaluate Gradient Boosting using the same leakage-safe
-  protocol.
-- The project currently contains 28 passing automated tests.
+- **Next task:** add NASA's asymmetric score, near-failure analysis, and
+  engine-level diagnostics before final model selection.
+- The project currently contains 30 passing automated tests.
 
 ## Current machine-learning workflow
 
@@ -71,9 +74,10 @@ condition and one simulated fault mode.
    current and previous cycles.
 7. Fit variance filtering and feature scaling on training engines only, then
    reuse the fitted preprocessing pipeline for validation data.
-8. Train the mean, Linear Regression, Decision Tree, and Random Forest models.
-9. Tune tree complexity using five-fold grouped cross-validation with
-   fold-local preprocessing.
+8. Train the mean, Linear Regression, Decision Tree, Random Forest, and
+   Gradient Boosting models.
+9. Tune tree-ensemble complexity and boosting settings using five-fold grouped
+   cross-validation with fold-local preprocessing.
 10. Fit selected configurations using all training engines and evaluate them
     on the held-out development-validation engines.
 
@@ -130,8 +134,8 @@ The current evaluation protocol follows these rules:
   while choosing features and models.
 - Evaluate predictions across all validation cycles using MAE, RMSE, and
   R-squared.
-- Tune Decision Tree and Random Forest complexity using five-fold grouped
-  cross-validation within the 80 training engines.
+- Tune Decision Tree, Random Forest, and Gradient Boosting configurations using
+  five-fold grouped cross-validation within the 80 training engines.
 - Fit variance filtering and scaling separately inside each cross-validation
   training fold before transforming that fold's validation engines.
 - Fit selected configurations using all 80 training engines, then evaluate
@@ -223,10 +227,11 @@ deactivate
 - [ ] Milestone 5: Establish trustworthy baselines and train candidate models
   - Mean, Linear Regression, controlled Decision Tree, and controlled Random
     Forest implemented
+  - Gradient Boosting implemented and tuned with grouped cross-validation
   - MAE, RMSE, and R-squared implemented
   - Engine-grouped cross-validation uses fold-local preprocessing
-  - Random Forest is the strongest current development candidate
-  - Gradient Boosting is next
+  - Gradient Boosting is the strongest current development candidate
+  - NASA score, near-failure analysis, and engine-level diagnostics are next
 - [ ] Milestone 6: Evaluate, interpret, and compare models
   - Core regression metrics
   - NASA asymmetric score

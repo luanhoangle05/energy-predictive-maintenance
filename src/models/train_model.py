@@ -7,7 +7,10 @@ import pandas as pd
 from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import (
+GradientBoostingRegressor,
+RandomForestRegressor
+)
 
 def train_dummy_regressor(
         features: pd.DataFrame,
@@ -73,6 +76,27 @@ def train_random_forest_regressor(
         bootstrap=True,
         random_state=random_state,
         n_jobs=-1,
+    )
+    model.fit(features, target)
+
+    return model
+
+def train_gradient_boosting_regressor(
+    features: pd.DataFrame,
+    target: pd.Series,
+    n_estimators: int = 100,
+    learning_rate: float = 0.1,
+    max_depth: int = 3,
+    min_samples_leaf: int = 1,
+    random_state: int = 42,
+) -> Any:
+    """Train a Gradient Boosting RUL model."""
+    model = GradientBoostingRegressor(
+        n_estimators=n_estimators,
+        learning_rate=learning_rate,
+        max_depth=max_depth,
+        min_samples_leaf=min_samples_leaf,
+        random_state=random_state,
     )
     model.fit(features, target)
 

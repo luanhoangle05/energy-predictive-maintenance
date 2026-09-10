@@ -264,12 +264,6 @@ This is the strongest current development candidate, not a final production mode
 
 All models below were evaluated using the same 20 held-out validation engines.
 
-| Model | Validation MAE | Validation RMSE | Validation R² |
-|---|---:|---:|---:|
-| Mean baseline | 55.36 cycles | 65.72 cycles | -0.0019 |
-| Clipped Linear Regression | 24.47 cycles | 31.25 cycles | 0.7734 |
-| Selected Decision Tree | 25.36 cycles | 32.38 cycles | 0.7568 |
-| Selected Random Forest | **23.74 cycles** | **30.52 cycles** | **0.7838** |
 
 The selected Random Forest currently has the lowest validation MAE and RMSE and the highest validation R². 
 It is therefore the strongest development candidate evaluated so far, 
@@ -299,3 +293,104 @@ The initial model will be evaluated using five-fold cross-validation grouped by 
 Mean cross-validation RMSE remains the primary comparison metric, with mean MAE also reported.
 
 The outer validation engines and NASA FD001 test data remain untouched until a Gradient Boosting configuration has been selected.
+
+## Initial Gradient Boosting cross-validation results
+
+The initial Gradient Boosting configuration was evaluated using five-fold
+cross-validation grouped by engine ID with fold-local preprocessing.
+
+| Model | Mean CV MAE | Mean CV RMSE |
+|---|---:|---:|
+| Selected Random Forest | 27.90 cycles | 39.36 cycles |
+| Initial Gradient Boosting | 28.50 cycles | 40.29 cycles |
+
+The initial Gradient Boosting configuration was slightly weaker than the
+selected Random Forest on both grouped-CV metrics. A small controlled search
+will be performed before deciding whether to evaluate Gradient Boosting on the
+outer validation engines.
+
+## Controlled Gradient Boosting tuning protocol
+
+The following paired boosting schedules will be compared:
+
+| `n_estimators` | `learning_rate` |
+|---:|---:|
+| 100 | 0.1 |
+| 200 | 0.05 |
+
+For each schedule, the following tree-complexity values will be evaluated:
+
+| Hyperparameter | Candidate values |
+|---|---|
+| `max_depth` | 2, 3 |
+| `min_samples_leaf` | 1, 30 |
+
+This produces eight configurations. Mean grouped-CV RMSE remains the primary
+selection metric, with mean MAE used as a secondary metric. The outer
+validation engines and NASA FD001 test data remain untouched during tuning.
+
+## Gradient Boosting tuning results
+
+Eight Gradient Boosting configurations were evaluated using five-fold
+cross-validation grouped by engine ID with fold-local preprocessing.
+
+| Trees | Learning rate | Max depth | Minimum leaf size | Mean CV MAE | Mean CV RMSE |
+|---:|---:|---:|---:|---:|---:|
+| 100 | 0.10 | 2 | 1 | 28.14 | 39.43 |
+| 100 | 0.10 | 2 | 30 | 28.16 | 39.46 |
+| 100 | 0.10 | 3 | 1 | 28.50 | 40.29 |
+| 100 | 0.10 | 3 | 30 | 28.50 | 40.29 |
+| 200 | 0.05 | 2 | 1 | 28.03 | 39.36 |
+| 200 | 0.05 | 2 | 30 | **28.03** | **39.36** |
+| 200 | 0.05 | 3 | 1 | 28.33 | 40.06 |
+| 200 | 0.05 | 3 | 30 | 28.33 | 40.07 |
+
+The selected configuration uses 200 estimators, a learning rate of 0.05,
+maximum tree depth of 2, and minimum leaf size of 30.
+
+The two depth-2, 200-tree configurations tied at the displayed precision.
+The larger minimum leaf size was selected as the more regularized option.
+
+The selected Gradient Boosting model improved mean CV MAE from 28.50 to 28.03
+cycles and mean CV RMSE from 40.29 to 39.36 cycles compared with the initial
+configuration.
+
+The selected Random Forest remains slightly stronger by grouped-CV MAE
+(27.90 versus 28.03), while their RMSE values tie at the displayed precision.
+The selected Gradient Boosting configuration will next be fitted using all
+80 training engines and evaluated once on the 20 outer validation engines.
+
+## Selected Gradient Boosting outer-validation results
+
+The selected Gradient Boosting configuration was fitted using all 80 training
+engines and evaluated once on the 20 outer validation engines.
+
+| Hyperparameter | Selected value |
+|---|---:|
+| `n_estimators` | 200 |
+| `learning_rate` | 0.05 |
+| `max_depth` | 2 |
+| `min_samples_leaf` | 30 |
+| `random_state` | 42 |
+
+| Dataset | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| Training | 25.38 cycles | 35.71 cycles | 0.7370 |
+| Validation | **22.04 cycles** | **29.03 cycles** | **0.8045** |
+
+The minimum raw validation prediction was 0.73 cycles, and no predictions
+were negative. Therefore, clipping predictions at zero did not change the
+reported metrics.
+
+The selected Gradient Boosting model outperformed the selected Random Forest
+by 1.70 MAE cycles and 1.49 RMSE cycles on outer validation. It is now the
+strongest current development candidate, but it is not yet the final model.
+The official NASA FD001 test data remains untouched.
+
+| Model | Validation MAE | Validation RMSE | Validation R² |
+|---|---:|---:|---:|
+| Mean baseline | 55.36 cycles | 65.72 cycles | -0.0019 |
+| Clipped Linear Regression | 24.47 cycles | 31.25 cycles | 0.7734 |
+| Selected Decision Tree | 25.36 cycles | 32.38 cycles | 0.7568 |
+| Selected Random Forest | 23.74 cycles | 30.52 cycles | 0.7838 |
+| Selected Gradient Boosting | **22.04 cycles** | **29.03 cycles** | **0.8045** |

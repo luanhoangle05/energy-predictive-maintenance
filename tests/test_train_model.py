@@ -5,7 +5,8 @@ from src.models.train_model import (
 train_decision_tree_regressor,
 train_dummy_regressor,
 train_linear_regression,
-train_random_forest_regressor
+train_random_forest_regressor,
+train_gradient_boosting_regressor
 )
 
 def test_dummy_regressor_baseline_predicts_mean_target() -> None:
@@ -135,5 +136,35 @@ def test_random_forest_regressor_trains_ensemble() -> None:
     predictions = model.predict(training_features)
 
     assert model.n_estimators == 10
+    assert model.random_state == 42
+    assert predictions.shape == (6,)
+
+def test_gradient_boosting_regressor_trains_ensemble() -> None:
+    training_features = pd.DataFrame(
+        {
+            "sensor_1": [
+                0.0,
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+            ],
+        }
+    )
+    training_target = pd.Series(
+        [10.0, 10.0, 8.0, 5.0, 2.0, 2.0]
+    )
+
+    model = train_gradient_boosting_regressor(
+        training_features,
+        training_target,
+        n_estimators=10,
+    )
+
+    predictions = model.predict(training_features)
+
+    assert model.n_estimators == 10
+    assert model.learning_rate == 0.1
     assert model.random_state == 42
     assert predictions.shape == (6,)
