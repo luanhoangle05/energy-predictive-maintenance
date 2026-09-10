@@ -68,7 +68,7 @@ def add_test_rul(
     #      31                   143 - 31 = 112
     #
     result[RUL_COLUMN] = (
-        result["unit_number"].map(endpoint_lookup)
+        result["unit_number"].map(endpoint_lookup) # return the value of the matching engine
         + last_observed_cycle
         - result["time_in_cycles"]
     )

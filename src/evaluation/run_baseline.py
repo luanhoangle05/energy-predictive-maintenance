@@ -676,7 +676,7 @@ def main(tune: bool = False) -> None:
 
         # Fit the selected Gradient Boosting configuration
 
-        selected_boosting_model = train_gradient_boosting_regressor(
+    selected_boosting_model = train_gradient_boosting_regressor(
             training_features,
             training_targets,
             **boosting_params,
