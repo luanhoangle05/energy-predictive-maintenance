@@ -568,6 +568,14 @@ def main(tune: bool = False) -> None:
     print(f"R²: {selected_forest_validation_metrics['r2']:.4f}")
 
     # Initial Gradient Boosting grouped cross-validation
+
+    boosting_params = {
+        "n_estimators": 200,
+        "learning_rate": 0.05,
+        "max_depth": 2,
+        "min_samples_leaf": 30,
+    }
+
     if tune:
         initial_gradient_boosting_cv_metrics = (
             cross_validate_gradient_boosting(
@@ -649,15 +657,30 @@ def main(tune: bool = False) -> None:
                         f"RMSE={result['mean_rmse']:.2f}"
                     )
 
+        best_boosting_result = min(
+            boosting_tuning_results,
+            key=lambda result: (
+                result["mean_mae"],
+                result["mean_rmse"],
+            ),
+        )
+
+        boosting_params = {
+            "n_estimators": best_boosting_result["n_estimators"],
+            "learning_rate": best_boosting_result["learning_rate"],
+            "max_depth": best_boosting_result["max_depth"],
+            "min_samples_leaf": best_boosting_result["min_samples_leaf"],
+        }
+
+        print(f"Best Gradient Boosting CV result: {best_boosting_result}")
+
         # Fit the selected Gradient Boosting configuration
-    selected_boosting_model = train_gradient_boosting_regressor(
-        training_features,
-        training_targets,
-        n_estimators=200,
-        learning_rate=0.05,
-        max_depth=2,
-        min_samples_leaf=30,
-    )
+
+        selected_boosting_model = train_gradient_boosting_regressor(
+            training_features,
+            training_targets,
+            **boosting_params,
+        )
 
     raw_boosting_training_predictions = predict_rul(
         selected_boosting_model,
