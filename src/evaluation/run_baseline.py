@@ -479,7 +479,12 @@ def main(tune: bool = False) -> None:
 
     # Controlled Random Forest tuning
 
-
+    forest_params = {
+        "n_estimators": 100,
+        "max_depth": 4,
+        "min_samples_leaf": 30,
+        "max_features": 1.0,
+    }
 
     if tune:
         forest_max_depth_values = [4, 8, None]
@@ -513,14 +518,29 @@ def main(tune: bool = False) -> None:
                     f"RMSE={result['mean_rmse']:.2f}"
                 )
 
+        best_forest_result = min(
+            forest_tuning_results,
+            key=lambda result: (
+                result["mean_mae"],
+                result["mean_rmse"],
+            ),
+        )
+
+        forest_params.update(
+            {
+                "max_depth": best_forest_result["max_depth"],
+                "min_samples_leaf": best_forest_result["min_samples_leaf"],
+            }
+        )
+
+        print(f"Best Random Forest CV result: {best_forest_result}")
+
     selected_forest_model = train_random_forest_regressor(
         training_features,
         training_targets,
-        n_estimators=100,
-        max_depth=4,
-        min_samples_leaf=30,
-        max_features=1.0,
+        **forest_params,
     )
+
     selected_forest_training_predictions = predict_rul(
         selected_forest_model,
         training_features,
