@@ -10,7 +10,7 @@ from sklearn.model_selection import GroupKFold
 
 from src.data.load_data import load_cmapss_file
 from src.data.prepare_data import prepare_training_validation_data
-from src.evaluation.evaluate_model import regression_metrics
+from src.evaluation.evaluate_model import regression_metrics, near_failure_metrics, engine_level_metrics
 from src.models.predict import predict_rul
 from src.models.train_model import (
     train_decision_tree_regressor,
@@ -24,6 +24,11 @@ from src.features.build_features import build_features
 
 from src.features.preprocess_features import (
 create_feature_preprocessor
+)
+
+from src.evaluation.plot_diagnostics import (
+plot_engine_prediction_trajectory,
+plot_residuals_by_actual_rul
 )
 
 
@@ -319,6 +324,7 @@ def main(tune: bool = False) -> None:
     print(f"MAE: {dummy_metrics['mae']:.2f} cycles")
     print(f"RMSE: {dummy_metrics['rmse']:.2f} cycles")
     print(f"R²: {dummy_metrics['r2']:.4f}")
+    print(f"NASA score: {dummy_metrics['nasa_score']:.2f}")
 
     # Linear Regression baseline
     linear_model = train_linear_regression(
@@ -355,6 +361,7 @@ def main(tune: bool = False) -> None:
     print(f"MAE: {linear_clipped_metrics['mae']:.2f} cycles")
     print(f"RMSE: {linear_clipped_metrics['rmse']:.2f} cycles")
     print(f"R²: {linear_clipped_metrics['r2']:.4f}")
+    print(f"NASA score: {linear_clipped_metrics['nasa_score']:.2f}")
 
     # Unrestricted Decision Tree baseline
     decision_tree_model = train_decision_tree_regressor(
@@ -386,6 +393,7 @@ def main(tune: bool = False) -> None:
     print(f"MAE: {tree_validation_metrics['mae']:.2f} cycles")
     print(f"RMSE: {tree_validation_metrics['rmse']:.2f} cycles")
     print(f"R²: {tree_validation_metrics['r2']:.4f}")
+    print(f"NASA score: {tree_validation_metrics['nasa_score']:.2f}")
     print(f"Decision Tree depth: {decision_tree_model.get_depth()}")
     print(f"Decision Tree leaves: {decision_tree_model.get_n_leaves()}")
 
@@ -474,6 +482,7 @@ def main(tune: bool = False) -> None:
     print(f"MAE: {selected_tree_validation_metrics['mae']:.2f} cycles")
     print(f"RMSE: {selected_tree_validation_metrics['rmse']:.2f} cycles")
     print(f"R²: {selected_tree_validation_metrics['r2']:.4f}")
+    print(f"NASA score: {selected_tree_validation_metrics['nasa_score']:.2f}")
     print(f"Depth: {selected_tree_model.get_depth()}")
     print(f"Leaves: {selected_tree_model.get_n_leaves()}")
 
@@ -566,6 +575,7 @@ def main(tune: bool = False) -> None:
     print(f"MAE: {selected_forest_validation_metrics['mae']:.2f} cycles")
     print(f"RMSE: {selected_forest_validation_metrics['rmse']:.2f} cycles")
     print(f"R²: {selected_forest_validation_metrics['r2']:.4f}")
+    print(f"NASA score: {selected_forest_validation_metrics['nasa_score']:.2f}")
 
     # Initial Gradient Boosting grouped cross-validation
 
@@ -739,6 +749,110 @@ def main(tune: bool = False) -> None:
         f"RMSE: {selected_boosting_validation_metrics['rmse']:.2f} cycles"
     )
     print(f"R²: {selected_boosting_validation_metrics['r2']:.4f}")
+    print(f"NASA score: {selected_boosting_validation_metrics['nasa_score']:.2f}")
+
+    near_failure_predictions = {
+        "Mean baseline": dummy_predictions,
+        "Clipped Linear Regression": linear_clipped_predictions,
+        "Selected Decision Tree": selected_tree_validation_predictions,
+        "Selected Random Forest": selected_forest_validation_predictions,
+        "Selected Gradient Boosting": selected_boosting_validation_predictions,
+    }
+
+    print("\nNear-failure comparison (true RUL <= 30 cycles)")
+
+    for model_name, predictions in near_failure_predictions.items():
+        metrics = near_failure_metrics(
+            validation_targets.to_numpy(),
+            predictions,
+            maximum_rul=30.0,
+        )
+
+        print(
+            f"{model_name}: "
+            f"rows={metrics['sample_count']}, "
+            f"MAE={metrics['mae']:.2f}, "
+            f"RMSE={metrics['rmse']:.2f}, "
+            f"R²={metrics['r2']:.4f}, "
+            f"NASA score={metrics['nasa_score']:.2f}"
+        )
+
+    boosting_engine_results = engine_level_metrics(
+        validation_targets.to_numpy(),
+        selected_boosting_validation_predictions,
+        validation_engine_groups.to_numpy(),
+    )
+
+    worst_boosting_engines = (
+        boosting_engine_results
+        .sort_values(
+            "mean_nasa_penalty",
+            ascending=False,
+        )
+        .head(5)
+        .loc[
+            :,
+            [
+                "unit_number",
+                "sample_count",
+                "mae",
+                "rmse",
+                "mean_error",
+                "overestimation_rate",
+                "mean_nasa_penalty",
+            ],
+        ]
+        .round(2)
+    )
+
+    print(
+        "\nWorst Gradient Boosting validation engines "
+        "by mean NASA penalty"
+    )
+    print(worst_boosting_engines.to_string(index=False))
+
+
+    validation_cycles = raw_data.loc[
+        validation_features.index,
+        "time_in_cycles",
+    ].to_numpy()
+
+    validation_actual = validation_targets.to_numpy()
+    validation_engine_array = validation_engine_groups.to_numpy()
+
+    for engine_id in (45, 84):
+        engine_mask = validation_engine_array == engine_id
+
+        figure_path = (
+            Path("reports/figures")
+            / f"gradient_boosting_engine_{engine_id}_trajectory.png"
+        )
+
+        plot_engine_prediction_trajectory(
+            cycles=validation_cycles[engine_mask],
+            actual=validation_actual[engine_mask],
+            predicted=selected_boosting_validation_predictions[engine_mask],
+            engine_id=engine_id,
+            model_name="Selected Gradient Boosting",
+            output_path=figure_path,
+        )
+
+        print(f"Saved trajectory plot: {figure_path}")
+
+    residual_figure_path = (
+        Path("reports/figures")
+        / "gradient_boosting_residuals_by_actual_rul.png"
+    )
+
+    plot_residuals_by_actual_rul(
+        actual=validation_actual,
+        predicted=selected_boosting_validation_predictions,
+        model_name="Selected Gradient Boosting",
+        output_path=residual_figure_path,
+    )
+
+    print(f"Saved residual plot: {residual_figure_path}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
