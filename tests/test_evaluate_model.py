@@ -7,7 +7,9 @@ from src.evaluation.evaluate_model import (
 regression_metrics,
 nasa_asymmetric_score,
 near_failure_metrics,
-engine_level_metrics
+engine_level_metrics,
+rul_band_metrics,
+feature_importance_table
 )
 
 def test_regression_metrics_calculates_mean_absolute_error() -> None:
@@ -189,6 +191,104 @@ def test_engine_level_metrics_rejects_different_lengths() -> None:
             actual,
             predicted,
             engine_ids,
+        )
+
+def test_rul_band_metrics_assigns_boundaries_correctly() -> None:
+    actual = np.array([
+        0.0, 30.0,
+        31.0, 60.0,
+        61.0, 120.0,
+        121.0, 150.0,
+    ])
+    predicted = np.array([
+        1.0, 28.0,
+        35.0, 55.0,
+        71.0, 110.0,
+        111.0, 140.0,
+    ])
+
+    results = rul_band_metrics(
+        actual,
+        predicted,
+    )
+
+    assert results["rul_band"].tolist() == [
+        "0-30",
+        "31-60",
+        "61-120",
+        ">120",
+    ]
+    assert results["sample_count"].tolist() == [
+        2,
+        2,
+        2,
+        2,
+    ]
+
+    near_failure = results.iloc[0]
+    assert near_failure["mae"] == pytest.approx(1.5)
+    assert near_failure["mean_error"] == pytest.approx(-0.5)
+    assert near_failure["overestimation_rate"] == pytest.approx(0.5)
+
+    high_rul = results.iloc[3]
+    assert high_rul["mae"] == pytest.approx(10.0)
+    assert high_rul["mean_error"] == pytest.approx(-10.0)
+    assert high_rul["overestimation_rate"] == pytest.approx(0.0)
+
+def test_rul_band_metrics_rejects_different_lengths() -> None:
+    with pytest.raises(
+        ValueError,
+        match="actual and predicted must have equal lengths",
+    ):
+        rul_band_metrics(
+            np.array([10.0, 20.0]),
+            np.array([12.0]),
+        )
+
+
+def test_feature_importance_table_sorts_and_accumulates() -> None:
+    feature_names = [
+        "feature_a",
+        "feature_b",
+        "feature_c",
+    ]
+    importances = np.array([
+        0.2,
+        0.5,
+        0.3,
+    ])
+
+    results = feature_importance_table(
+        feature_names,
+        importances,
+    )
+
+    assert results["rank"].tolist() == [1, 2, 3]
+    assert results["feature"].tolist() == [
+        "feature_b",
+        "feature_c",
+        "feature_a",
+    ]
+    assert results["importance"].tolist() == pytest.approx([
+        0.5,
+        0.3,
+        0.2,
+    ])
+    assert results["cumulative_importance"].tolist() == pytest.approx([
+        0.5,
+        0.8,
+        1.0,
+    ])
+
+
+def test_feature_importance_table_rejects_different_lengths() -> None:
+    with pytest.raises(
+        ValueError,
+        match="feature_names and importances must have equal lengths",
+    ):
+        feature_importance_table(
+            ["feature_a", "feature_b"],
+            np.array([0.5]),
         )
 
      

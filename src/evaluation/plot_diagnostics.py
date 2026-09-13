@@ -6,6 +6,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+import pandas as pd
+
 
 def plot_engine_prediction_trajectory(
         cycles: np.ndarray,
@@ -145,6 +147,70 @@ def plot_residuals_by_actual_rul(
     axis.set_ylabel("Prediction error: predicted - actual")
     axis.grid(alpha=0.3)
     axis.legend()
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    figure.tight_layout()
+    figure.savefig(
+        output_path,
+        dpi=150,
+        bbox_inches="tight",
+    )
+    plt.close(figure)
+
+def plot_feature_importances(
+        feature_importance: pd.DataFrame,
+        model_name: str,
+        output_path: Path,
+        top_n: int = 15,
+) -> None:
+    """Plot the most important model features."""
+    required_columns = {
+        "feature",
+        "importance",
+    }
+
+    if not required_columns.issubset(feature_importance.columns):
+        raise ValueError(
+            "feature_importance must contain feature and importance columns"
+        )
+
+    if top_n <= 0:
+        raise ValueError("top_n must be greater than zero")
+
+    top_features = (
+        feature_importance
+        .nlargest(top_n, "importance")
+        .sort_values("importance")
+    )
+
+    figure, axis = plt.subplots(figsize=(10, 7))
+
+    bars = axis.barh(
+        top_features["feature"],
+        top_features["importance"],
+        color="tab:blue",
+    )
+
+    axis.bar_label(
+        bars,
+        fmt="%.3f",
+        padding=3,
+    )
+
+    axis.set_title(
+        f"{model_name} top {len(top_features)} feature importances"
+    )
+    axis.set_xlabel("Split-based feature importance")
+    axis.set_ylabel("Feature")
+    axis.grid(
+        axis="x",
+        alpha=0.3,
+    )
 
     output_path = Path(output_path)
     output_path.parent.mkdir(

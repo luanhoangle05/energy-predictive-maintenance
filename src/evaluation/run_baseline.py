@@ -10,7 +10,7 @@ from sklearn.model_selection import GroupKFold
 
 from src.data.load_data import load_cmapss_file
 from src.data.prepare_data import prepare_training_validation_data
-from src.evaluation.evaluate_model import regression_metrics, near_failure_metrics, engine_level_metrics
+from src.evaluation.evaluate_model import regression_metrics, near_failure_metrics, engine_level_metrics, rul_band_metrics, feature_importance_table
 from src.models.predict import predict_rul
 from src.models.train_model import (
     train_decision_tree_regressor,
@@ -28,7 +28,9 @@ create_feature_preprocessor
 
 from src.evaluation.plot_diagnostics import (
 plot_engine_prediction_trajectory,
-plot_residuals_by_actual_rul
+plot_residuals_by_actual_rul,
+plot_feature_importances
+
 )
 
 
@@ -852,6 +854,70 @@ def main(tune: bool = False) -> None:
     )
 
     print(f"Saved residual plot: {residual_figure_path}")
+
+    boosting_rul_band_results = rul_band_metrics(
+        validation_actual,
+        selected_boosting_validation_predictions,
+    )
+
+    boosting_rul_band_table = (
+        boosting_rul_band_results.loc[
+            :,
+            [
+                "rul_band",
+                "sample_count",
+                "mae",
+                "rmse",
+                "r2",
+                "mean_error",
+                "overestimation_rate",
+                "mean_nasa_penalty",
+            ],
+        ]
+        .round(2)
+    )
+
+    print("\nGradient Boosting performance by RUL band")
+    print(boosting_rul_band_table.to_string(index=False))
+
+    boosting_feature_importance = feature_importance_table(
+        feature_names=training_features.columns,
+        importances=selected_boosting_model.feature_importances_,
+    )
+
+    top_boosting_features = (
+        boosting_feature_importance
+        .head(15)
+        .round({
+            "importance": 4,
+            "cumulative_importance": 4,
+        })
+    )
+
+    print("\nTop 15 Gradient Boosting features")
+    print(top_boosting_features.to_string(index=False))
+
+    print(
+        "\nTotal feature importance: "
+        f"{boosting_feature_importance['importance'].sum():.4f}"
+    )
+
+    feature_importance_figure_path = (
+        Path("reports/figures")
+        / "gradient_boosting_feature_importance.png"
+    )
+
+    plot_feature_importances(
+        feature_importance=boosting_feature_importance,
+        model_name="Selected Gradient Boosting",
+        output_path=feature_importance_figure_path,
+        top_n=15,
+    )
+
+    print(
+        "Saved feature-importance plot: "
+        f"{feature_importance_figure_path}"
+    )
 
 
 if __name__ == "__main__":

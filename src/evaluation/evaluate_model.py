@@ -1,6 +1,6 @@
 """Evaluate Remaining Useful Life regression predictions."""
 
-from typing import Dict
+from typing import Dict, Sequence
 
 import pandas as pd
 
@@ -129,6 +129,108 @@ def engine_level_metrics(
         })
 
     return pd.DataFrame(engine_results)
+
+def rul_band_metrics(
+        actual: np.ndarray,
+        predicted: np.ndarray,
+) -> pd.DataFrame:
+    """Calculate prediction diagnostics across RUL lifecycle bands."""
+    actual_array = np.asarray(actual)
+    predicted_array = np.asarray(predicted)
+
+    if len(actual_array) != len(predicted_array):
+        raise ValueError(
+            "actual and predicted must have equal lengths"
+        )
+
+    band_masks = [
+        ("0-30", actual_array <= 30),
+        (
+            "31-60",
+            (actual_array > 30)
+            & (actual_array <= 60),
+        ),
+        (
+            "61-120",
+            (actual_array > 60)
+            & (actual_array <= 120),
+        ),
+        (">120", actual_array > 120),
+    ]
+
+    band_results = []
+
+    for band_name, band_mask in band_masks:
+        sample_count = int(np.count_nonzero(band_mask))
+
+        if sample_count == 0:
+            continue
+
+        band_actual = actual_array[band_mask]
+        band_predicted = predicted_array[band_mask]
+
+        metrics = regression_metrics(
+            band_actual,
+            band_predicted,
+        )
+
+        errors = band_predicted - band_actual
+
+        band_results.append({
+            "rul_band": band_name,
+            "sample_count": sample_count,
+            "mae": metrics["mae"],
+            "rmse": metrics["rmse"],
+            "r2": metrics["r2"],
+            "nasa_score": metrics["nasa_score"],
+            "mean_nasa_penalty": (
+                metrics["nasa_score"] / sample_count
+            ),
+            "mean_error": float(np.mean(errors)),
+            "overestimation_rate": float(
+                np.mean(errors > 0)
+            ),
+        })
+
+    return pd.DataFrame(band_results)
+
+def feature_importance_table(
+        feature_names: Sequence[str],
+        importances: np.ndarray,
+) -> pd.DataFrame:
+    """Create a ranked feature-importance table."""
+    feature_name_list = list(feature_names)
+    importance_array = np.asarray(
+        importances,
+        dtype=float,
+    )
+
+    if len(feature_name_list) != len(importance_array):
+        raise ValueError(
+            "feature_names and importances must have equal lengths"
+        )
+
+    results = pd.DataFrame({
+        "feature": feature_name_list,
+        "importance": importance_array,
+    })
+
+    results = results.sort_values(
+        "importance",
+        ascending=False,
+    ).reset_index(drop=True)
+
+    results.insert(
+        0,
+        "rank",
+        np.arange(1, len(results) + 1),
+    )
+
+    results["cumulative_importance"] = (
+        results["importance"].cumsum()
+    )
+
+    return results
 
 
 
