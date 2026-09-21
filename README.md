@@ -40,25 +40,23 @@ condition and one simulated fault mode.
 
 ## Current status
 
-- **Milestones 1-4 are complete:** project setup, dataset documentation,
-  validation and exploration, leakage-safe targets, temporal features, and
-  preprocessing.
-- **Milestone 5 is in progress:** the mean baseline, Linear Regression,
-  Decision Tree, Random Forest, and Gradient Boosting models are implemented
-  and tested.
-- Decision Tree, Random Forest, and Gradient Boosting configurations are
-  compared using five-fold cross-validation grouped by engine ID.
-- Preprocessing is fitted separately inside each cross-validation training
-  fold before transforming its validation engines.
-- The selected Gradient Boosting configuration uses 200 estimators, a learning
-  rate of 0.05, maximum tree depth of 2, and minimum leaf size of 30.
-- Gradient Boosting is the strongest current development candidate: MAE 22.04
-  cycles, RMSE 29.03 cycles, and R-squared 0.8045.
-- These are row-level development-validation results. NASA's official FD001
-  test data remains untouched.
-- **Next task:** add NASA's asymmetric score, near-failure analysis, and
-  engine-level diagnostics before final model selection.
-- The project currently contains 30 passing automated tests.
+- Milestones 1–6 are complete for development modeling and evaluation.
+- Five regression model families were compared using engine-separated
+  validation and leakage-safe grouped cross-validation.
+- Gradient Boosting with time_in_cycles is the selected development
+  candidate: validation MAE 22.04 cycles, RMSE 29.03 cycles, and R² 0.8045.
+- Near-failure MAE is 6.82 cycles for observations with true RUL <= 30.
+- Evaluation includes NASA's asymmetric score, equal-weight engine
+  comparisons, lifecycle diagnostics, feature importance, and ablation.
+- Endpoint selection and prediction-target alignment are implemented
+  and tested using synthetic data.
+- The latest local test run passed all 49 automated tests.
+- NASA's official FD001 test set remains untouched.
+- Next: Milestone 7—define engine-separated uncertainty calibration
+  before final fitting and official test evaluation.
+
+See [Milestone 6 evaluation](docs/milestone_6_evaluation.md)
+for results, limitations, and the final test protocol.
 
 ## Current machine-learning workflow
 
@@ -224,15 +222,15 @@ deactivate
 - [x] Milestone 2: Acquire and document the C-MAPSS dataset
 - [x] Milestone 3: Load, validate, clean, and explore FD001
 - [x] Milestone 4: Build leakage-safe RUL targets, features, and preprocessing
-- [ ] Milestone 5: Establish trustworthy baselines and train candidate models
+- [x] Milestone 5: Establish trustworthy baselines and train candidate models
   - Mean, Linear Regression, controlled Decision Tree, and controlled Random
     Forest implemented
   - Gradient Boosting implemented and tuned with grouped cross-validation
   - MAE, RMSE, and R-squared implemented
   - Engine-grouped cross-validation uses fold-local preprocessing
   - Gradient Boosting is the strongest current development candidate
-  - NASA score, near-failure analysis, and engine-level diagnostics are next
-- [ ] Milestone 6: Evaluate, interpret, and compare models
+  - - Extended evaluation completed in Milestone 6
+- [x] Milestone 6: Evaluate, interpret, and compare models
   - Core regression metrics
   - NASA asymmetric score
   - Near-failure and engine-level diagnostics
