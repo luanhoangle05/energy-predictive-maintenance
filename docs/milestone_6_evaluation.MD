@@ -61,5 +61,45 @@ causation or show the direction of a feature's effect.
 
 ## Verification
 
-43 automated tests passed, including a test confirming that
-the engine-level model summary gives each engine equal weight.
+49 automated tests passed.
+
+Coverage includes equal weighting across engines, endpoint selection,
+preservation of temporal feature history, and prediction-target
+alignment by engine ID.
+
+## Evaluation readiness
+
+Gradient Boosting with time_in_cycles remains the selected development
+candidate. Removing time_in_cycles worsened performance under the
+fixed-settings ablation.
+
+The endpoint preparation and alignment helpers are implemented and
+tested with synthetic data. Official NASA test evaluation is pending.
+
+Before final fitting and official test evaluation, define the
+engine-separated calibration split for Milestone 7 and freeze the
+model configuration and evaluation procedure.
+
+## Final NASA test protocol
+
+Before accessing official test results, freeze the feature definitions,
+model settings, preprocessing procedure, and prediction clipping rule.
+
+1. Define the model-fitting and engine-separated calibration partitions.
+   Reserve calibration engines for Milestone 7 uncertainty estimation.
+   Never use official test engines for fitting or calibration.
+2. Fit preprocessing and Gradient Boosting using model-fitting engines only.
+3. Build temporal features using each test engine's complete observed
+   history, ordered by cycle.
+4. Apply the fitted preprocessing without refitting it.
+5. Select the last observed feature row for each test engine.
+6. Predict one RUL value per engine and clip negative predictions to zero.
+7. Match predictions to RUL_FD001.txt by engine ID.
+8. Verify that every test engine has exactly one prediction and one target.
+9. Report endpoint MAE, RMSE, R², and summed NASA score.
+
+These endpoint results measure a different evaluation setting from
+the development metrics calculated across complete trajectories.
+
+Official test results must not guide further feature selection,
+hyperparameter tuning, or uncertainty calibration.

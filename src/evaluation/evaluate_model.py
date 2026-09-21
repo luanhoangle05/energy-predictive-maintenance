@@ -279,5 +279,39 @@ def summarize_models_by_engine(
         .reset_index(drop=True)
     )
 
+def align_endpoint_predictions(
+        predictions: pd.Series,
+        targets: pd.Series,
+) -> pd.DataFrame:
+    """Match endpoint predictions and targets by engine ID."""
+    if predictions.empty or targets.empty:
+        raise ValueError("Predictions and targets must not be empty")
+
+    if not predictions.index.is_unique or not targets.index.is_unique:
+        raise ValueError("Engine IDs must be unique")
+
+    if predictions.index.hasnans or targets.index.hasnans:
+        raise ValueError("Engine IDs must not be missing")
+
+    missing_predictions = targets.index.difference(predictions.index)
+    missing_targets = predictions.index.difference(targets.index)
+
+    if len(missing_predictions) or len(missing_targets):
+        raise ValueError(
+            "Predictions and targets must contain the same engine IDs"
+        )
+
+    aligned = pd.DataFrame({
+        "actual": targets,
+        "predicted": predictions.reindex(targets.index),
+    }).sort_index()
+
+    if not np.isfinite(aligned.to_numpy(dtype=float)).all():
+        raise ValueError("Predictions and targets must be finite")
+
+    aligned.index.name = "unit_number"
+
+    return aligned
+
 
 

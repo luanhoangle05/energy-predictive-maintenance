@@ -69,3 +69,53 @@ def prepare_training_validation_data(
         validation_targets,
         preprocessor
     )
+
+
+def select_engine_endpoints(
+        observed_data: pd.DataFrame,
+        features: pd.DataFrame,
+) -> pd.DataFrame:
+    """Select each engine's last observed, already-built feature row."""
+    required_columns = {"unit_number", "time_in_cycles"}
+
+    if not required_columns.issubset(observed_data.columns):
+        raise ValueError(
+            "observed_data must contain unit_number and time_in_cycles"
+        )
+
+    if observed_data.empty:
+        raise ValueError("observed_data must not be empty")
+
+    if not observed_data.index.is_unique:
+        raise ValueError("observed_data must have a unique index")
+
+    if not observed_data.index.equals(features.index):
+        raise ValueError(
+            "observed_data and features must have matching indexes"
+        )
+
+    if observed_data[
+        ["unit_number", "time_in_cycles"]
+    ].isna().any().any():
+        raise ValueError("Engine IDs and cycles must not be missing")
+
+    if observed_data.duplicated(
+        subset=["unit_number", "time_in_cycles"],
+    ).any():
+        raise ValueError("Duplicate engine-cycle observations found")
+
+    endpoint_rows = (
+        observed_data
+        .sort_values(["unit_number", "time_in_cycles"])
+        .groupby("unit_number", sort=False)
+        .tail(1)
+    )
+
+    endpoint_features = features.loc[endpoint_rows.index].copy()
+
+    endpoint_features.index = pd.Index(
+        endpoint_rows["unit_number"].to_numpy(),
+        name="unit_number",
+    )
+
+    return endpoint_features

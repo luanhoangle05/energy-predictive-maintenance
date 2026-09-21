@@ -10,8 +10,11 @@ near_failure_metrics,
 engine_level_metrics,
 rul_band_metrics,
 feature_importance_table,
-summarize_models_by_engine
+summarize_models_by_engine,
+align_endpoint_predictions
 )
+
+import pandas as pd
 
 def test_regression_metrics_calculates_mean_absolute_error() -> None:
     actual = np.array([10.0, 20.0, 30.0])
@@ -326,5 +329,43 @@ def test_model_summary_weights_engines_equally() -> None:
     assert uneven["mean_engine_nasa_penalty"] == pytest.approx(
         (np.exp(1.0) - 1.0) / 2.0
     )
+
+def test_endpoint_predictions_align_by_engine_id() -> None:
+    predictions = pd.Series(
+        [80.0, 25.0],
+        index=[2, 1],
+    )
+    targets = pd.Series(
+        [20.0, 90.0],
+        index=[1, 2],
+    )
+
+    result = align_endpoint_predictions(predictions, targets)
+
+    expected = pd.DataFrame(
+        {
+            "actual": [20.0, 90.0],
+            "predicted": [25.0, 80.0],
+        },
+        index=pd.Index([1, 2], name="unit_number"),
+    )
+
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_endpoint_predictions_reject_mismatched_engine_ids() -> None:
+    predictions = pd.Series([25.0, 80.0], index=[1, 3])
+    targets = pd.Series([20.0, 90.0], index=[1, 2])
+
+    with pytest.raises(ValueError, match="same engine IDs"):
+        align_endpoint_predictions(predictions, targets)
+
+
+def test_endpoint_predictions_reject_duplicate_engine_ids() -> None:
+    predictions = pd.Series([25.0, 80.0], index=[1, 1])
+    targets = pd.Series([20.0, 90.0], index=[1, 2])
+
+    with pytest.raises(ValueError, match="Engine IDs must be unique"):
+        align_endpoint_predictions(predictions, targets)
 
      
