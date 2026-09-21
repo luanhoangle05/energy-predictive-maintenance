@@ -10,7 +10,12 @@ from sklearn.model_selection import GroupKFold
 
 from src.data.load_data import load_cmapss_file
 from src.data.prepare_data import prepare_training_validation_data
-from src.evaluation.evaluate_model import regression_metrics, near_failure_metrics, engine_level_metrics, rul_band_metrics, feature_importance_table
+from src.evaluation.evaluate_model import (regression_metrics,
+    near_failure_metrics,
+    engine_level_metrics,
+    rul_band_metrics,
+    feature_importance_table,
+    summarize_models_by_engine)
 from src.models.predict import predict_rul
 from src.models.train_model import (
     train_decision_tree_regressor,
@@ -855,6 +860,11 @@ def main(tune: bool = False) -> None:
 
     print(f"Saved residual plot: {residual_figure_path}")
 
+
+    # Divided RUL into 4 bands:
+    # 0-30:nearly failure
+    # 30-120: approaching failure
+    # >120: still too high RUL
     boosting_rul_band_results = rul_band_metrics(
         validation_actual,
         selected_boosting_validation_predictions,
@@ -880,6 +890,9 @@ def main(tune: bool = False) -> None:
     print("\nGradient Boosting performance by RUL band")
     print(boosting_rul_band_table.to_string(index=False))
 
+
+    # Feature importance table
+    # To check which features Gradient Boosting rely mostly on
     boosting_feature_importance = feature_importance_table(
         feature_names=training_features.columns,
         importances=selected_boosting_model.feature_importances_,
@@ -920,6 +933,86 @@ def main(tune: bool = False) -> None:
     )
 
 
+    # Ablation test that drops engine time_in_cycles to control the experiment
+    ablated_training_features = training_features.drop(
+        columns=["time_in_cycles"],
+    )
+    ablated_validation_features = validation_features.drop(
+        columns=["time_in_cycles"],
+    )
+
+    ablated_boosting_model = train_gradient_boosting_regressor(
+        ablated_training_features,
+        training_targets,
+        **boosting_params,
+    )
+
+    raw_ablated_predictions = predict_rul(
+        ablated_boosting_model,
+        ablated_validation_features,
+    )
+
+    ablated_predictions = np.clip(
+        raw_ablated_predictions,
+        a_min=0.0,
+        a_max=None,
+    )
+
+    ablated_metrics = regression_metrics(
+        validation_actual,
+        ablated_predictions,
+    )
+
+    full_near_failure_metrics = near_failure_metrics(
+        validation_actual,
+        selected_boosting_validation_predictions,
+        maximum_rul=30.0,
+    )
+    ablated_near_failure_metrics = near_failure_metrics(
+        validation_actual,
+        ablated_predictions,
+        maximum_rul=30.0,
+    )
+
+    print("\nGradient Boosting time-in-cycles ablation")
+    print(
+        "Full model: "
+        f"MAE={selected_boosting_validation_metrics['mae']:.2f}, "
+        f"RMSE={selected_boosting_validation_metrics['rmse']:.2f}, "
+        f"R²={selected_boosting_validation_metrics['r2']:.4f}, "
+        f"NASA score="
+        f"{selected_boosting_validation_metrics['nasa_score']:.2f}"
+    )
+    print(
+        "Without time_in_cycles: "
+        f"MAE={ablated_metrics['mae']:.2f}, "
+        f"RMSE={ablated_metrics['rmse']:.2f}, "
+        f"R²={ablated_metrics['r2']:.4f}, "
+        f"NASA score={ablated_metrics['nasa_score']:.2f}"
+    )
+    print(
+        "Full model near failure: "
+        f"MAE={full_near_failure_metrics['mae']:.2f}, "
+        f"RMSE={full_near_failure_metrics['rmse']:.2f}, "
+        f"NASA score={full_near_failure_metrics['nasa_score']:.2f}"
+    )
+    print(
+        "Without time_in_cycles near failure: "
+        f"MAE={ablated_near_failure_metrics['mae']:.2f}, "
+        f"RMSE={ablated_near_failure_metrics['rmse']:.2f}, "
+        f"NASA score={ablated_near_failure_metrics['nasa_score']:.2f}"
+    )
+
+    engine_summary = summarize_models_by_engine(
+        actual=validation_actual,
+        predictions_by_model=near_failure_predictions,
+        engine_ids=validation_engine_array,
+    )
+
+    print("\nModel comparison with equal weight per engine")
+    print(engine_summary.round(2).to_string(index=False))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Train and evaluate FD001 regression models."
@@ -932,3 +1025,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(tune=args.tune)
+

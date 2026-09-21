@@ -9,7 +9,8 @@ nasa_asymmetric_score,
 near_failure_metrics,
 engine_level_metrics,
 rul_band_metrics,
-feature_importance_table
+feature_importance_table,
+summarize_models_by_engine
 )
 
 def test_regression_metrics_calculates_mean_absolute_error() -> None:
@@ -290,5 +291,40 @@ def test_feature_importance_table_rejects_different_lengths() -> None:
             ["feature_a", "feature_b"],
             np.array([0.5]),
         )
+
+def test_model_summary_weights_engines_equally() -> None:
+    actual = np.array([10.0, 20.0, 10.0, 20.0, 30.0, 40.0])
+    engine_ids = np.array([1, 1, 2, 2, 2, 2])
+
+    predictions = {
+        "Uneven errors": actual + np.array([
+            10.0, 10.0,
+            0.0, 0.0, 0.0, 0.0,
+        ]),
+        "Uniform errors": actual + 4.0,
+    }
+
+    results = summarize_models_by_engine(
+        actual,
+        predictions,
+        engine_ids,
+    )
+
+    assert results["model"].tolist() == [
+        "Uniform errors",
+        "Uneven errors",
+    ]
+
+    indexed = results.set_index("model")
+    uneven = indexed.loc["Uneven errors"]
+
+    assert uneven["engine_count"] == 2
+    assert uneven["mean_engine_mae"] == pytest.approx(5.0)
+    assert uneven["mean_engine_rmse"] == pytest.approx(5.0)
+    assert uneven["worst_engine_mae"] == pytest.approx(10.0)
+    assert uneven["mean_overestimation_rate"] == pytest.approx(0.5)
+    assert uneven["mean_engine_nasa_penalty"] == pytest.approx(
+        (np.exp(1.0) - 1.0) / 2.0
+    )
 
      

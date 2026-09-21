@@ -232,5 +232,52 @@ def feature_importance_table(
 
     return results
 
+def summarize_models_by_engine(
+        actual: np.ndarray,
+        predictions_by_model: Dict[str, np.ndarray],
+        engine_ids: np.ndarray,
+) -> pd.DataFrame:
+    """Compare models with equal weight given to each engine."""
+    if not predictions_by_model:
+        raise ValueError(
+            "predictions_by_model must contain at least one model"
+        )
+
+    if len(actual) == 0:
+        raise ValueError("actual must contain at least one observation")
+
+    summary_results = []
+
+    for model_name, predicted in predictions_by_model.items():
+        per_engine = engine_level_metrics(
+            actual,
+            predicted,
+            engine_ids,
+        )
+
+        summary_results.append({
+            "model": model_name,
+            "engine_count": int(len(per_engine)),
+            "mean_engine_mae": float(per_engine["mae"].mean()),
+            "median_engine_mae": float(per_engine["mae"].median()),
+            "worst_engine_mae": float(per_engine["mae"].max()),
+            "mean_engine_rmse": float(per_engine["rmse"].mean()),
+            "mean_engine_nasa_penalty": float(
+                per_engine["mean_nasa_penalty"].mean()
+            ),
+            "worst_engine_nasa_penalty": float(
+                per_engine["mean_nasa_penalty"].max()
+            ),
+            "mean_overestimation_rate": float(
+                per_engine["overestimation_rate"].mean()
+            ),
+        })
+
+    return (
+        pd.DataFrame(summary_results)
+        .sort_values("mean_engine_mae")
+        .reset_index(drop=True)
+    )
+
 
 
