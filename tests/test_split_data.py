@@ -4,6 +4,11 @@ import pandas as pd
 
 from src.data.split_data import split_by_engine
 
+from src.data.split_data import (
+    split_by_engine,
+    split_training_calibration_evaluation,
+)
+
 def test_split_by_engine_trajectories_separate() -> None:
     data = pd.DataFrame(
         {
@@ -60,3 +65,35 @@ def test_split_by_engine_is_reproducible() -> None:
     pd.testing.assert_frame_equal(
         first_validation, second_validation
     )
+
+def test_three_way_split_keeps_engines_separate() -> None:
+    data = pd.DataFrame({
+        "unit_number": [
+            engine
+            for engine in range(1, 101)
+            for _ in range(3)
+        ],
+        "time_in_cycles": [1, 2, 3] * 100,
+    })
+
+    training, calibration, evaluation = (
+        split_training_calibration_evaluation(data)
+    )
+
+    training_ids = set(training["unit_number"])
+    calibration_ids = set(calibration["unit_number"])
+    evaluation_ids = set(evaluation["unit_number"])
+
+    assert len(training_ids) == 64
+    assert len(calibration_ids) == 16
+    assert len(evaluation_ids) == 20
+
+    assert training_ids.isdisjoint(calibration_ids)
+    assert training_ids.isdisjoint(evaluation_ids)
+    assert calibration_ids.isdisjoint(evaluation_ids)
+
+    combined = pd.concat(
+        [training, calibration, evaluation]
+    ).sort_index()
+
+    pd.testing.assert_frame_equal(combined, data)

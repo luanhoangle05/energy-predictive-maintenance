@@ -10,6 +10,11 @@ from src.data.validate_data import validate_cmapss_data
 from src.features.build_features import build_features
 from src.features.preprocess_features import create_feature_preprocessor
 
+from src.data.split_data import (
+    split_by_engine,
+    split_training_calibration_evaluation,
+)
+
 def prepare_training_validation_data(
         data: pd.DataFrame,
         validation_size: float= 0.2,
@@ -119,3 +124,69 @@ def select_engine_endpoints(
     )
 
     return endpoint_features
+
+def prepare_uncertainty_splits(
+        data: pd.DataFrame,
+        evaluation_size: float = 0.2,
+        calibration_size: float = 0.2,
+        random_state: int = 42,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Validate run-to-failure data, add RUL, and split whole engines."""
+    validate_cmapss_data(data)
+
+    labeled_data = add_training_rul(data)
+
+    training_data, calibration_data, evaluation_data = (
+        split_training_calibration_evaluation(
+            labeled_data,
+            evaluation_size=evaluation_size,
+            calibration_size=calibration_size,
+            random_state=random_state,
+        )
+    )
+
+    return training_data, calibration_data, evaluation_data
+
+def select_cutoff_indices(
+        data: pd.DataFrame,
+        minimum_cycle: int = 30,
+        random_state: int = 42,
+) -> pd.Index:
+    """Select one pre-failure row per engine from complete trajectories."""
+    validate_cmapss_data(data)
+
+    if data.empty:
+        raise ValueError("data must not be empty")
+
+    if not data.index.is_unique:
+        raise ValueError("data must have a unique index")
+
+    if minimum_cycle < 1:
+        raise ValueError("minimum_cycle must be at least 1")
+
+    final_cycles = data.groupby("unit_number")[
+        "time_in_cycles"
+    ].transform("max")
+
+    eligible = data.loc[
+        (data["time_in_cycles"] >= minimum_cycle)
+        & (data["time_in_cycles"] < final_cycles)
+    ].sort_values(["unit_number", "time_in_cycles"])
+
+    missing_engines = (
+        set(data["unit_number"])
+        - set(eligible["unit_number"])
+    )
+
+    if missing_engines:
+        raise ValueError(
+            f"No eligible cutoff for engines: {sorted(missing_engines)}"
+        )
+
+    selected = (
+        eligible.groupby("unit_number", sort=True)
+        .sample(n=1, random_state=random_state)
+        .sort_values("unit_number")
+    )
+
+    return selected.index

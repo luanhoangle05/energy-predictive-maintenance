@@ -9,6 +9,7 @@ import pytest
 from src.data.prepare_data import (
     prepare_training_validation_data,
     select_engine_endpoints,
+    select_cutoff_indices,
 )
 
 from src.data.load_data import CMAPSS_COLUMNS, RUL_COLUMN
@@ -177,3 +178,48 @@ def test_endpoint_workflow_preserves_history_and_target_alignment() -> None:
     assert aligned.index.tolist() == [1, 2]
     assert aligned["actual"].tolist() == [10.0, 20.0]
     assert aligned["predicted"].tolist() == [12.0, 22.0]
+
+
+def test_cutoff_selection_preserves_rows_and_is_reproducible() -> None:
+    rows = []
+
+    for engine in (1, 2):
+        for cycle in range(1, 36):
+            row = {column: 0.0 for column in CMAPSS_COLUMNS}
+            row["unit_number"] = engine
+            row["time_in_cycles"] = cycle
+            rows.append(row)
+
+    data = pd.DataFrame(rows, columns=CMAPSS_COLUMNS)
+    data.index = pd.Index(range(1000, 1070))
+
+    first = select_cutoff_indices(data, random_state=42)
+    second = select_cutoff_indices(data, random_state=42)
+
+    pd.testing.assert_index_equal(first, second)
+
+    selected = data.loc[first]
+
+    assert len(selected) == 2
+    assert selected["unit_number"].is_unique
+    assert set(selected["unit_number"]) == {1, 2}
+    assert selected["time_in_cycles"].between(30, 34).all()
+    assert first.isin(data.index).all()
+
+def test_cutoff_selection_rejects_engine_without_eligible_cycle() -> None:
+    rows = []
+
+    for engine, final_cycle in ((1, 35), (2, 30)):
+        for cycle in range(1, final_cycle + 1):
+            row = {column: 0.0 for column in CMAPSS_COLUMNS}
+            row["unit_number"] = engine
+            row["time_in_cycles"] = cycle
+            rows.append(row)
+
+    data = pd.DataFrame(rows, columns=CMAPSS_COLUMNS)
+
+    with pytest.raises(
+        ValueError,
+        match=r"No eligible cutoff for engines: \[2\]",
+    ):
+        select_cutoff_indices(data)

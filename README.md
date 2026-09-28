@@ -4,9 +4,9 @@ An end-to-end machine-learning project for estimating the remaining useful life
 (RUL) of rotating machinery from multivariate time-series sensor data.
 
 The current development scope uses the FD001 subset of NASA's C-MAPSS dataset.
-The project begins with reproducible RUL prediction and will later extend into
-uncertainty estimation, risk assessment, maintenance-policy simulation,
-explainability, and deployment.
+The project includes reproducible RUL prediction, model interpretation, and
+exploratory uncertainty calibration and risk indicators. Future work includes
+maintenance-policy simulation and deployment.
 
 ## Business problem
 
@@ -41,6 +41,8 @@ condition and one simulated fault mode.
 ## Current status
 
 - Milestones 1–6 are complete for development modeling and evaluation.
+- Milestone 7 is complete for exploratory uncertainty calibration and risk
+  assessment.
 - Five regression model families were compared using engine-separated
   validation and leakage-safe grouped cross-validation.
 - Gradient Boosting with time_in_cycles is the selected development
@@ -50,13 +52,21 @@ condition and one simulated fault mode.
   comparisons, lifecycle diagnostics, feature importance, and ablation.
 - Endpoint selection and prediction-target alignment are implemented
   and tested using synthetic data.
-- The latest local test run passed all 49 automated tests.
+- The latest local test run passed all 89 automated tests.
+- Initial Milestone 7 uncertainty calibration uses 64 model-fitting,
+  16 calibration, and 20 development-evaluation engines.
+- Prediction intervals covered 20/20 evaluation snapshots, with a
+  mean width of 137.30 cycles. These exploratory intervals are broad.
+- Low-RUL flags identified all four snapshots within 30 cycles of
+  failure, with eight false positives.
 - NASA's official FD001 test set remains untouched.
-- Next: Milestone 7—define engine-separated uncertainty calibration
-  before final fitting and official test evaluation.
+- Final fitting and official endpoint evaluation remain pending.
 
 See [Milestone 6 evaluation](docs/milestone_6_evaluation.md)
 for results, limitations, and the final test protocol.
+
+See [Milestone 7 uncertainty](docs/milestone_7_uncertainty.md)
+for the calibration method, threshold indicators, and limitations.
 
 ## Current machine-learning workflow
 
@@ -124,7 +134,7 @@ The feature definitions and FD001 verification are documented in
 
 ## Evaluation protocol
 
-The current evaluation protocol follows these rules:
+The Milestones 5–6 model-comparison protocol uses these rules:
 
 - Use uncapped RUL as the first target definition.
 - Keep complete engines separated between training and validation.
@@ -137,19 +147,23 @@ The current evaluation protocol follows these rules:
 - Fit variance filtering and scaling separately inside each cross-validation
   training fold before transforming that fold's validation engines.
 - Fit selected configurations using all 80 training engines, then evaluate
-  once on the 20 held-out development-validation engines.
-- Add NASA's asymmetric score, near-failure performance, and engine-level
-  diagnostics after the current model comparison is complete.
+  on the 20 development-validation engines. Repeated inspection makes these
+  development results exploratory.
+- Report NASA's asymmetric score, near-failure performance, and engine-level
+  diagnostics alongside the model comparison.
 
 The last row of each complete run-to-failure validation engine is not a useful
 endpoint benchmark because every such row has true RUL equal to zero. Official
 endpoint evaluation will instead use the last observed row of each truncated
-NASA test trajectory together with `RUL_FD001.txt`. If endpoint-like validation
-is needed during development, leakage-safe artificial cutoff snapshots will be
-created later.
+NASA test trajectory together with `RUL_FD001.txt`. Milestone 7 uses artificial
+cutoff snapshots for development evaluation, with features based only on the
+history available at each cutoff.
 
-Future prediction-uncertainty calibration will also use engine-separated
-calibration data. The final NASA test set will not be reused for calibration.
+The initial uncertainty experiment uses engine-separated model-fitting,
+calibration, and evaluation partitions, with one artificial cutoff snapshot
+per calibration and evaluation engine. Historical reuse during model
+selection means these results remain exploratory. The official NASA test
+set is not used for calibration.
 
 ## Repository structure
 
@@ -229,14 +243,18 @@ deactivate
   - MAE, RMSE, and R-squared implemented
   - Engine-grouped cross-validation uses fold-local preprocessing
   - Gradient Boosting is the strongest current development candidate
-  - - Extended evaluation completed in Milestone 6
+  - Extended evaluation completed in Milestone 6
 - [x] Milestone 6: Evaluate, interpret, and compare models
   - Core regression metrics
   - NASA asymmetric score
   - Near-failure and engine-level diagnostics
   - Explainability and failure-case analysis
-- [ ] Milestone 7: Add engine-separated uncertainty calibration and risk
-  assessment
+- [x] Milestone 7: Add engine-separated uncertainty calibration and risk
+  assessment (exploratory development scope)
+  - One cutoff snapshot per calibration and evaluation engine
+  - Prediction intervals and 30-cycle threshold indicators
+  - Calibration, interval, and threshold helpers tested and results documented
+  - Final fitting and official NASA test evaluation remain pending
 - [ ] Milestone 8: Simulate maintenance timing and hypothetical cost policies
 - [ ] Milestone 9: Operationalize the workflow with MLflow, FastAPI, Streamlit,
   Docker, automated testing, CI, and deployment

@@ -47,3 +47,28 @@ def split_by_engine(
     ].copy()
 
     return training_data, validation_data
+
+def split_training_calibration_evaluation(
+        data: pd.DataFrame,
+        evaluation_size: float = 0.2,
+        calibration_size: float = 0.2,
+        random_state: int = 42,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Split complete engines into training, calibration, and evaluation.
+
+    calibration_size is a fraction of the engines remaining after
+    the evaluation split.
+    """
+    development_data, evaluation_data = split_by_engine(
+        data,
+        validation_size=evaluation_size,
+        random_state=random_state,
+    )
+
+    training_data, calibration_data = split_by_engine(
+        development_data,
+        validation_size=calibration_size,
+        random_state=random_state,
+    )
+
+    return training_data, calibration_data, evaluation_data
