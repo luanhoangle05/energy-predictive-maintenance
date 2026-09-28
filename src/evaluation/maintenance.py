@@ -108,3 +108,86 @@ def score_maintenance_timing(
             int(failure_cycle - maintenance_cycle) if success else 0
         ),
     }
+
+def simulate_rul_threshold_policy(
+    cycles: np.ndarray,
+    predicted_rul: np.ndarray,
+    failure_cycle: int,
+    *,
+    monitoring_start: int = 30,
+    lead_time: int = 5,
+    rul_threshold: float = 30.0,
+) -> dict:
+    """Simulate one engine using a predicted-RUL threshold."""
+    trigger_cycle = find_first_rul_trigger(
+        cycles,
+        predicted_rul,
+        monitoring_start=monitoring_start,
+        rul_threshold=rul_threshold,
+    )
+
+    result = score_maintenance_timing(
+        trigger_cycle,
+        failure_cycle,
+        lead_time=lead_time,
+    )
+
+    # Retrospective input check: require history through failure.
+    if np.asarray(cycles)[-1] != failure_cycle:
+        raise ValueError("The history must end at failure_cycle")
+
+    return {"policy": "predicted_rul", **result}
+
+def simulate_run_to_failure(failure_cycle: int) -> dict:
+    """Score an engine that receives no preventive maintenance."""
+    result = score_maintenance_timing(
+        trigger_cycle=None,
+        failure_cycle=failure_cycle,
+    )
+
+    return {"policy": "run_to_failure", **result}
+
+def simulate_fixed_age(failure_cycle: int) -> dict:
+    """Simulate a frozen cycle-150 trigger with five-cycle lead time."""
+    fixed_age = 150
+
+    # Validate the failure cycle using the existing scorer.
+    result = score_maintenance_timing(
+        trigger_cycle=None,
+        failure_cycle=failure_cycle,
+    )
+
+    # The trigger occurs only if the observed lifetime reaches cycle 150.
+    if failure_cycle >= fixed_age:
+        result = score_maintenance_timing(
+            trigger_cycle=fixed_age,
+            failure_cycle=failure_cycle,
+            lead_time=5,
+        )
+
+    return {"policy": "fixed_age", **result}
+
+def simulate_lower_bound_policy(
+    cycles: np.ndarray,
+    lower_bound: np.ndarray,
+    failure_cycle: int,
+    *,
+    monitoring_start: int = 30,
+    lead_time: int = 5,
+    rul_threshold: float = 30.0,
+) -> dict:
+    """Apply an exploratory lower-bound threshold along one history.
+
+    Snapshot calibration does not guarantee simultaneous coverage
+    across the trajectory.
+    """
+    result = simulate_rul_threshold_policy(
+        cycles=cycles,
+        predicted_rul=lower_bound,
+        failure_cycle=failure_cycle,
+        monitoring_start=monitoring_start,
+        lead_time=lead_time,
+        rul_threshold=rul_threshold,
+    )
+
+    return {**result, "policy": "lower_bound"}
