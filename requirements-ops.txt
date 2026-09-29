@@ -1,0 +1,11 @@
+-r requirements.txt
+# Pin serving-facing packages; transitive dependencies retain upstream constraints.
+scikit-learn==1.7.2
+fastapi==0.141.1
+uvicorn==0.54.0
+pydantic==2.13.5
+mlflow==3.16.1
+streamlit==1.64.0
+httpx==0.28.1
+joblib>=1.3,<2
+plotly>=6.0,<7

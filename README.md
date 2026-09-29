@@ -5,8 +5,9 @@ An end-to-end machine-learning project for estimating the remaining useful life
 
 The current development scope uses the FD001 subset of NASA's C-MAPSS dataset.
 The project includes reproducible RUL prediction, model interpretation, and
-exploratory uncertainty calibration and risk indicators. Future work includes
-maintenance-policy simulation and deployment.
+exploratory uncertainty calibration, risk indicators, and hypothetical
+maintenance timing and cost simulation. A development API, dashboard, and
+container configuration are available; hosted deployment remains pending.
 
 ## Business problem
 
@@ -40,9 +41,16 @@ condition and one simulated fault mode.
 
 ## Current status
 
+- Milestone 9 now includes MLflow tracking, persisted development artifacts,
+  FastAPI, Streamlit, Docker Compose, and CI configuration. Local Python checks
+  pass; container and hosted deployment verification remain pending. See the
+  [Milestone 9 runbook](docs/milestone_9_operations.md).
+
 - Milestones 1–6 are complete for development modeling and evaluation.
 - Milestone 7 is complete for exploratory uncertainty calibration and risk
   assessment.
+- Milestone 8 is complete for exploratory maintenance timing, hypothetical
+  costs, and nine predefined cost-sensitivity scenarios.
 - Five regression model families were compared using engine-separated
   validation and leakage-safe grouped cross-validation.
 - Gradient Boosting with time_in_cycles is the selected development
@@ -52,13 +60,19 @@ condition and one simulated fault mode.
   comparisons, lifecycle diagnostics, feature importance, and ablation.
 - Endpoint selection and prediction-target alignment are implemented
   and tested using synthetic data.
-- The latest local test run passed all 89 automated tests.
+- The latest local full test run passed all 170 automated tests.
 - Initial Milestone 7 uncertainty calibration uses 64 model-fitting,
   16 calibration, and 20 development-evaluation engines.
 - Prediction intervals covered 20/20 evaluation snapshots, with a
   mean width of 137.30 cycles. These exploratory intervals are broad.
 - Low-RUL flags identified all four snapshots within 30 cycles of
   failure, with eight false positives.
+- Four maintenance policies were simulated on the 20 development-evaluation
+  engines with frozen model and timing settings. Predicted RUL produced
+  20 preventive successes and discarded 21.10 cycles per engine on average.
+- Predicted RUL had the lowest hypothetical cost in six sensitivity scenarios
+  and tied with the lower-bound policy in three. Costs are arbitrary scenario
+  weights, not validated maintenance economics or real savings.
 - NASA's official FD001 test set remains untouched.
 - Final fitting and official endpoint evaluation remain pending.
 
@@ -67,6 +81,10 @@ for results, limitations, and the final test protocol.
 
 See [Milestone 7 uncertainty](docs/milestone_7_uncertainty.md)
 for the calibration method, threshold indicators, and limitations.
+
+See [Milestone 8 maintenance simulation](docs/milestone_8_maintenance.md)
+for frozen timing rules, cost assumptions, results, reproduction commands,
+and exploratory limitations.
 
 ## Current machine-learning workflow
 
@@ -169,7 +187,7 @@ set is not used for calibration.
 
 ```text
 energy-predictive-maintenance/
-|-- app/                    # Future Streamlit presentation application
+|-- app/                    # Streamlit prediction dashboard
 |-- configs/                # Future reproducible project configuration
 |-- data/
 |   |-- raw/                # Original, immutable source files (ignored)
@@ -207,7 +225,7 @@ Create and activate a local virtual environment:
 py -3.10 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-ops.txt
 ```
 
 If PowerShell blocks the activation script, allow locally created scripts for
@@ -255,12 +273,19 @@ deactivate
   - Prediction intervals and 30-cycle threshold indicators
   - Calibration, interval, and threshold helpers tested and results documented
   - Final fitting and official NASA test evaluation remain pending
-- [ ] Milestone 8: Simulate maintenance timing and hypothetical cost policies
+- [x] Milestone 8: Simulate maintenance timing and hypothetical cost policies
+  (exploratory development scope)
+  - Four policies evaluated on 20 development engines
+  - Timing and cost helpers tested; saved runner outputs checked
+  - Initial hypothetical costs and nine sensitivity scenarios documented
 - [ ] Milestone 9: Operationalize the workflow with MLflow, FastAPI, Streamlit,
   Docker, automated testing, CI, and deployment
+  - Tracked training, persisted model bundle, API, and dashboard implemented
+  - Integration tests and Docker/CI configuration added
+  - Container and hosted deployment verification pending
 - [ ] Milestone 10: Finalize documentation, limitations, and portfolio narrative
 
-Future maintenance and cost outputs will be explicitly presented as hypothetical
+Maintenance and cost outputs are explicitly presented as hypothetical
 decision-support simulations, not validated maintenance recommendations.
 
 ## License

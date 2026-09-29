@@ -1,0 +1,38 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      MODEL_PATH: /workspace/models/development.joblib
+    volumes:
+      - ./models:/workspace/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  dashboard:
+    build: .
+    volumes:
+      - type: bind
+        source: ./data/raw/cmapss/train_FD001.txt
+        target: /workspace/data/raw/cmapss/train_FD001.txt
+        read_only: true
+        bind:
+          create_host_path: false
+      - ./reports/maintenance:/workspace/reports/maintenance:ro
+    command: ["python", "-m", "streamlit", "run", "app/dashboard.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

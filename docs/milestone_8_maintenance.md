@@ -2,10 +2,12 @@
 
 ## Status and scope
 
-Milestone 8 is in progress. Timing/outcome logic is implemented for four
+Milestone 8 is complete for its exploratory development scope.
+Timing/outcome logic is implemented for four
 policies, tested with synthetic examples, and applied to 20 development
 evaluation engines. The first hypothetical cost scenario is implemented
 and applied to the saved timing outcomes without changing policy decisions.
+Nine predefined cost-sensitivity scenarios are also implemented and verified.
 
 This experiment uses NASA C-MAPSS FD001 simulated turbofan data.
 Results illustrate decision-support methodology, not real maintenance
@@ -123,7 +125,15 @@ The development runner was executed manually. Saved CSV checks confirmed
 and consistent success/failure and discarded-life calculations.
 
 The complete model-to-CSV runner does not yet have an automated
-integration test.
+integration test. Cost-runner aggregation and the nine sensitivity scenarios
+were verified through manual execution and saved-output checks, rather than
+automated runner integration tests.
+
+The final code, test, and documentation review found no blocking issue in
+the current FD001 development workflow. The 133-test result above was
+reported by the user; the suite and model fitting were not rerun during
+this final review. Completion applies to the exploratory simulation scope,
+not operational validation or official NASA endpoint evaluation.
 
 ## Limitations and remaining work
 

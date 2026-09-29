@@ -1,0 +1,5 @@
+policy,engines,preventive_successes,failures,total_discarded_cycles,mean_discarded_cycles_all_engines,mean_discarded_cycles_successes
+fixed_age,20,18,2,991,49.55,55.05555555555556
+lower_bound,20,20,0,1932,96.6,96.6
+predicted_rul,20,20,0,422,21.1,21.1
+run_to_failure,20,0,20,0,0.0,

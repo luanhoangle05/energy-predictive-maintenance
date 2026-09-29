@@ -36,6 +36,9 @@ Thumbs.db
 # Logs and temporary files
 *.log
 *.tmp
+/tmp/
+/output/
+.streamlit/secrets.toml
 
 # Project data (retain directory markers)
 data/raw/*
@@ -52,6 +55,12 @@ models/*
 *.pickle
 *.joblib
 *.onnx
+
+# Local experiment tracking
+mlruns/
+mlartifacts/
+mlflow.db
+mlflow.db-*
 
 # Generated figures (retain directory marker)
 reports/figures/*

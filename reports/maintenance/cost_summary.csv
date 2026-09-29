@@ -1,0 +1,5 @@
+policy,engines,total_cost,mean_cost_per_engine
+fixed_age,20,47.91,2.3954999999999997
+lower_bound,20,39.32,1.966
+predicted_rul,20,24.22,1.2109999999999999
+run_to_failure,20,200.0,10.0

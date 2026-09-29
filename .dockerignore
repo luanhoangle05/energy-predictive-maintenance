@@ -1,0 +1,10 @@
+*
+!requirements.txt
+!requirements-ops.txt
+!src/
+!src/**
+!app/
+!app/**
+!.streamlit/
+!.streamlit/config.toml
+**/__pycache__
