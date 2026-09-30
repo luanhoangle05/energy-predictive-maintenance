@@ -1,6 +1,14 @@
 """Streamlit product view over the unchanged FD001 inference workflow."""
 from io import BytesIO
 import os
+from pathlib import Path
+import sys
+
+# Script launchers may put only app/ on sys.path, excluding sibling packages.
+PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 import httpx
 import pandas as pd
 import streamlit as st
