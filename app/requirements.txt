@@ -1,0 +1,9 @@
+# Community Cloud discovers this file beside app/dashboard.py before the root file.
+# Shared telemetry validation imports sklearn/joblib; inference stays in FastAPI.
+streamlit==1.64.0
+httpx==0.28.1
+plotly>=6.0,<7
+numpy>=1.24,<3.0
+pandas>=2.0,<3.0
+scikit-learn==1.7.2
+joblib>=1.3,<2
