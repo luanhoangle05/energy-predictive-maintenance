@@ -3,6 +3,8 @@
 from pathlib import Path
 from unittest.mock import patch
 import json
+import hashlib
+from io import BytesIO
 
 import httpx
 import numpy as np
@@ -11,6 +13,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from app.ui.demo import truncate_demo
+from app.ui import demo
 from app.ui.formatting import attention_label, range_label, priority_table
 from app.ui.maintenance import load_maintenance_reports
 from app.ui.state import request_predictions
@@ -113,3 +116,39 @@ def test_demo_missing_data_does_not_fall_back_to_test_data():
         assert not app.exception
         assert "Development demo unavailable" in app.error[0].value
         assert "prediction_result" not in app.session_state
+
+
+def test_cloud_demo_matches_local_prefix_and_caches_verified_bytes(tmp_path, monkeypatch):
+    raw = full_development_histories()
+    content = raw.to_csv(sep=" ", header=False, index=False).encode()
+    source = tmp_path / "train_FD001.txt"
+    source.write_bytes(content)
+    monkeypatch.setattr(demo, "DEMO_SOURCE", source)
+    local = demo.load_demo()
+    monkeypatch.setattr(demo, "DEMO_SOURCE", tmp_path / "missing.txt")
+    monkeypatch.setenv("DEMO_SOURCE_URL", "https://example.com/train_FD001.txt")
+    monkeypatch.setenv("DEMO_SOURCE_SHA256", hashlib.sha256(content).hexdigest())
+    demo.download_demo_source.cache_clear()
+    try:
+        with patch("app.ui.demo.urllib.request.urlopen", return_value=BytesIO(content)) as download:
+            pd.testing.assert_frame_equal(demo.load_demo(), local)
+            pd.testing.assert_frame_equal(demo.load_demo(), local)
+            download.assert_called_once()
+    finally:
+        demo.download_demo_source.cache_clear()
+
+
+def test_cloud_demo_rejects_mismatched_bytes():
+    demo.download_demo_source.cache_clear()
+    with patch("app.ui.demo.urllib.request.urlopen", return_value=BytesIO(b"wrong")):
+        with pytest.raises(ValueError, match="checksum mismatch"):
+            demo.download_demo_source("https://example.com/train_FD001.txt", "0" * 64)
+    assert demo.download_demo_source.cache_info().currsize == 0
+
+
+@pytest.mark.parametrize("filename", ["test_FD001.txt", "RUL_FD001.txt"])
+def test_cloud_demo_rejects_official_test_urls_before_download(filename):
+    with patch("app.ui.demo.urllib.request.urlopen") as download:
+        with pytest.raises(ValueError, match="train_FD001"):
+            demo.download_demo_source("https://example.com/" + filename, "0" * 64)
+        download.assert_not_called()
